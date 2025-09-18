@@ -1,0 +1,23 @@
+<!-- Main Navigation -->
+<nav class="navbar">
+  <div class="nav-brand">
+    <h1>{{ title }}</h1>
+    <p>Sink Deep, Play Smart</p>
+  </div>
+  
+  <div class="nav-links">
+    <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">Home</a>
+    <a routerLink="/lobby" routerLinkActive="active">Lobby</a>
+    <a routerLink="/game" routerLinkActive="active">Game</a>
+  </div>
+</nav>
+
+<!-- Main Content -->
+<main class="main-content">
+  <router-outlet></router-outlet>
+</main>
+
+<!-- Footer -->
+<footer class="footer">
+  <p>&copy; 2024 Abyssal - Multiplayer Naval Strategy Game</p>
+</footer>
