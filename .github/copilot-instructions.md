@@ -8,7 +8,7 @@ This file provides workspace-specific instructions for GitHub Copilot in the Aby
 - [x] Scaffold the Project
   - Use vertical-slice architecture for all features.
   - Server: Node.js 22 LTS, TypeScript, Express, WebSockets, TypeORM.
-  - Client: Angular 20 (when created).
+  - Client: Angular 20.
 - [x] Customize the Project
   - Each feature in its own folder with public entry (index.ts) and optional README.
   - Modular service and repository layers.
