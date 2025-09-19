@@ -7,7 +7,16 @@ const server = createServer(app);
 const wss = new WebSocketServer({ server });
 
 app.get('/', (req, res) => {
+  console.log('Received request for root', req.headers);
   res.send('Abyssal Server is running');
+});
+app.get('/api', (req, res) => {
+  console.log('Received request for API', req.headers);
+  res.json({ message: 'Abyssal API is running' });
+});
+app.get('/api/whatever', (req, res) => {
+  console.log('Received request for API /whatever', req.headers);
+  res.json({ message: 'Abyssal API /whatever is running' });
 });
 
 wss.on('connection', (ws) => {
