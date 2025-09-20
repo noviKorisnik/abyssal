@@ -2,22 +2,16 @@ import express from 'express';
 import { createServer } from 'http';
 import { WebSocketServer } from 'ws';
 import { gameConfigRouter } from './game-config';
+import { gameManagerRouter } from './game-manager';
 
 const app = express();
 const server = createServer(app);
 const wss = new WebSocketServer({ server });
 
-// app.get('/', (req, res) => {
-//   console.log('Received request for root', req.headers);
-//   res.send('Abyssal Server is running');
-// });
-// app.get('/api', (req, res) => {
-//   console.log('Received request for API', req.headers);
-//   res.json({ message: 'Abyssal API is running' });
-// });
-
+app.use(express.json());
 
 app.use('/api/game-config', gameConfigRouter);
+app.use('/api/game-manager', gameManagerRouter);
 
 
 wss.on('connection', (ws) => {

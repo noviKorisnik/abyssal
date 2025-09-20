@@ -8,5 +8,9 @@ export const routes: Routes = [
 	{
 		path: 'game-setup',
 		loadChildren: () => import('./game-setup').then(m => m.gameSetupRoutes)
+	},
+	{
+		path: 'game',
+		loadChildren: () => import('./game').then(m => m.gameRoutes)
 	}
 ];

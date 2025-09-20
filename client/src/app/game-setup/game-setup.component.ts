@@ -1,8 +1,9 @@
 import { Component } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { GameConfig } from './game-config.model';
 import { BoardCell, GameSetup } from './game-setup.model';
 import { generateGameSetup } from './game-setup.util';
+import { GameSetupService } from './game-setup.service';
 
 @Component({
     selector: 'app-game-setup',
@@ -14,7 +15,11 @@ export class GameSetupComponent {
     gameSetup?: GameSetup;
     boardGenerated = false;
 
-    constructor(private route: ActivatedRoute) {
+    constructor(
+        private route: ActivatedRoute,
+        private gameSetupService: GameSetupService,
+        private router: Router
+    ) {
         this.gameConfig = this.route.snapshot.data['gameConfig'];
     }
 
@@ -35,6 +40,16 @@ export class GameSetupComponent {
     }
 
     confirmReady() {
-        // TODO: implement ready logic
+        if (!this.gameSetup) return;
+        this.gameSetupService.sendReady(this.gameSetup).subscribe({
+            next: ({ gameId }) => {
+                // Redirect to game/lobby screen (adjust route as needed)
+                this.router.navigate(['/game', gameId]);
+            },
+            error: err => {
+                // Handle error (show message, etc.)
+                alert('Failed to join game: ' + (err?.message || err));
+            }
+        });
     }
 }
