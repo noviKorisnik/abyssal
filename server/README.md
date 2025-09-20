@@ -30,6 +30,19 @@ Node.js backend for Abyssal multiplayer naval strategy game.
 - `src/` – Source code
 - `src/index.ts` – Main entry point
 - `feature/` – Each feature in its own folder
+```
+server/
+  src/
+    game-config/
+    lobby/
+    board-setup/
+    turn/
+    ai-player/
+    end-game/
+    websocket/
+    user/
+    ...
+```
 
 ## License
 Apache License 2.0

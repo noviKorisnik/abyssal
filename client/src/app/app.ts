@@ -1,11 +1,12 @@
 import { HttpClient } from '@angular/common/http';
 import { Component, signal } from '@angular/core';
+import { RouterOutlet } from '@angular/router';
 
 @Component({
   selector: 'app-root',
   imports: [
-    // RouterOutlet
-  ],
+    RouterOutlet,
+],
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })
@@ -15,7 +16,7 @@ export class App {
   constructor(private http: HttpClient) {}
 
   callApi() {
-    this.http.get('/api').subscribe({
+    this.http.get('/api/game-config').subscribe({
       next: (response) => console.log('API response:', response),
       error: (err) => console.error('API error:', err)
     });

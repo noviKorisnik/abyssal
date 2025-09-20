@@ -1,0 +1,25 @@
+h1 {
+  text-align: center;
+}
+.board {
+  display: flex;
+  justify-content: center;
+  margin: 2rem 0;
+}
+table {
+  border-collapse: collapse;
+}
+.cell {
+  width: 32px;
+  height: 32px;
+  border: 1px solid #888;
+  background: #f8f8f8;
+}
+.cell.ship {
+  background: #b3d1ff;
+  border-color: #0057b8;
+}
+.controls {
+  text-align: center;
+  margin-top: 1rem;
+}
