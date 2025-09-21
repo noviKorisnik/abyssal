@@ -1,4 +1,19 @@
 <div class="game-container">
   <h2>Game Room</h2>
+  @if (room) {
+    <h3>Game ID: {{ room.gameId }}</h3>
+    <p>User ID: {{ room.player.userId }}</p>
+  }
+  @if (lobby) {
+    <h3>Lobby Players:</h3>
+    <ul>
+      @for (player of lobby.players; track player.userId) {
+        <li>
+          {{ player.userId }} - {{ player.connected ? 'Connected' : 'Disconnected' }}
+        </li>
+      }
+    </ul>
+  }
+  
   <!-- Game UI will be rendered here -->
 </div>

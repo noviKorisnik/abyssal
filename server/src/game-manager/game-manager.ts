@@ -1,7 +1,10 @@
+import { connect } from "http2";
 import { GameConfig } from "../game-config";
 import { GamePlayer, GameState } from "../game-setup";
 
 export class GameManager {
+    // Track sockets for each game manager (room)
+    private sockets: Set<any> = new Set(); // Use 'any' for WebSocket type compatibility
     private static instances: GameManager[] = [];
     static byId: Map<string, GameManager> = new Map();
 
@@ -25,6 +28,52 @@ export class GameManager {
             GameManager.byId.set(manager.id, manager);
         }
         return manager;
+    }
+
+    addSocket(socket: any, userId: string) {
+        socket.userId = userId;//this was suggested while I was typing... neat if can work
+        const player = this.players.find(p => p.userId === userId);
+        if (!player) {
+            socket.send(JSON.stringify({ type: 'error', error: 'Player not in game' }));
+            return;
+        }
+        socket.player = player;// attach player info to socket, also good if can work
+        this.sockets.add(socket);
+        socket.on('message', (data: any) => {
+            // Handle player message for this room/game
+            // e.g., parse action, update state, broadcast, etc.
+        });
+        socket.on('close', () => {
+            this.removeSocket(socket);
+            // Optionally: handle player disconnect logic here
+            // e.g., update game state, notify other players
+        });
+        socket.send(JSON.stringify({ type: 'joined', gameId: this.id, player }));
+        this.broadcast({ type: 'lobby', players: this.playerList() });
+    }
+
+    removeSocket(socket: any) {
+        this.sockets.delete(socket);
+        this.broadcast({ type: 'lobby', players: this.playerList() });
+    }
+
+    // Broadcast a message to all sockets in this room
+    broadcast(message: any) {
+        const msg = typeof message === 'string' ? message : JSON.stringify(message);
+        for (const sock of this.sockets) {
+            try {
+                sock.send(msg);
+            } catch (err) {
+                // Optionally handle broken sockets
+            }
+        }
+    }
+
+    private playerList() {
+        return this.players.map(p => ({
+            userId: p.userId,
+            connected: Array.from(this.sockets).some(sock => sock.userId === p.userId)
+        }));
     }
 
     private assignPlayer(player: GamePlayer): boolean {
@@ -52,7 +101,6 @@ export class GameManager {
         });
     }
 
-
     /**
      * Reset manager for a new game after finishing/cleanup.
      * Assigns new id, clears players, sets state to 'ready'.
@@ -72,6 +120,7 @@ export class GameManager {
             GameManager.instances.push(this);
         }
         // Optionally reset other state (countdown, etc.)
+        this.sockets.clear();
     }
 
     private static get newUid(): string {

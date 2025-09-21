@@ -1,4 +1,5 @@
 import { WebSocket } from "ws";
+import { GameManager } from "./game-manager";
 
 export function handleGameManagerSocket(ws: WebSocket) {
   console.log('[WS] GameManager handler attached');
@@ -18,19 +19,19 @@ export function handleGameManagerSocket(ws: WebSocket) {
         break;
       // Add more cases for other message types
       default:
-        ws.send(JSON.stringify({ type: 'error', error: 'Unknown message type' }));
+        // expected that other message types will be handled by GameManager instance
+        // ws.send(JSON.stringify({ type: 'error', error: 'Unknown message type' }));
     }
   });
 
-  ws.send(JSON.stringify({ type: 'welcome', message: 'Welcome to Abyssal Game Manager WebSocket!' }));
+//   ws.send(JSON.stringify({ type: 'welcome', message: 'Welcome to Abyssal Game Manager WebSocket!' }));
 }
 
 function handleJoin(ws: WebSocket, data: any) {
-    console.log(`[WS] Join request: userId=${data.userId}, gameId=${data.gameId}`, data);
-  // Example: assign player to room and send lobby state
-  // You may want to validate data here
-  // const manager = GameManager.assignPlayerToRoom(data);
-  // ws.send(JSON.stringify({ type: 'lobby', gameId: manager.id, players: manager['players'] }));
-  // console.log(`[WS] Player joined: userId=${data.userId}, gameId=${manager.id}`);
-  ws.send(JSON.stringify({ type: 'lobby', message: 'Join handler not yet implemented.' }));
+    const manager = GameManager.getById(data.gameId);
+    if (!manager) {
+        ws.send(JSON.stringify({ type: 'error', error: 'Game not found' }));
+        return;
+    }
+    manager.addSocket(ws, data.userId);
 }

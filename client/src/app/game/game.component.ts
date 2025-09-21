@@ -3,6 +3,18 @@ import { GameSocket } from './game.socket';
 import { UserService } from '../user';
 import { ActivatedRoute } from '@angular/router';
 import { Subscription } from 'rxjs';
+import { GameSetup } from '../game-setup/game-setup.model';
+
+interface Lobby {
+  players: Array<{ userId: string; connected: boolean }>;
+}
+interface GameRoom {
+  gameId: string;
+  player: {
+    userId: string;
+    setup: GameSetup;
+  }
+}
 
 @Component({
   selector: 'app-game',
@@ -13,7 +25,8 @@ export class GameComponent implements OnInit, OnDestroy {
   gameId: string = '';
   userId: string = '';
   socket: GameSocket | null = null;
-  lobby: any = null;
+  room: GameRoom | null = null;
+  lobby: Lobby | null = null;
   gameState: any = null;
   connected: boolean = false;
   private userIdSub: Subscription | null = null;
@@ -58,13 +71,19 @@ export class GameComponent implements OnInit, OnDestroy {
   }
 
   handleSocketMessage(data: any) {
-    if (data.type === 'lobby') {
-      console.log('[Socket] Lobby data:', data);
-      this.lobby = data;
-    } else if (data.type === 'gameState') {
-      console.log('[Socket] Game state data:', data);
-      this.gameState = data;
+    switch (data.type) {
+      case 'lobby':
+        console.log('[Socket] Lobby data:', data);
+        this.lobby = data;
+        break;
+      case 'joined':
+        console.log('[Socket] Joined confirmation:', data);
+        this.room = data;
+        break;
+      default:
+        // Handle other message types as needed
+        console.log('[Socket] Unhandled message type:', data);
+        break;
     }
-    // handle other message types as needed
   }
 }
