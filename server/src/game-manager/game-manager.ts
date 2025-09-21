@@ -3,6 +3,7 @@ import { GamePlayer, GameState } from "../game-setup";
 
 export class GameManager {
     private static instances: GameManager[] = [];
+    static byId: Map<string, GameManager> = new Map();
 
     private _id: string = GameManager.newUid;
     private state: GameState = 'ready';
@@ -21,6 +22,7 @@ export class GameManager {
         if (!manager) {
             manager = new GameManager(player);
             GameManager.instances.push(manager);
+            GameManager.byId.set(manager.id, manager);
         }
         return manager;
     }
@@ -56,9 +58,13 @@ export class GameManager {
      * Assigns new id, clears players, sets state to 'ready'.
      */
     reset(): void {
+        // Remove old id from map
+        GameManager.byId.delete(this._id);
         this._id = GameManager.newUid;
         this.state = 'ready';
         this.players = [];
+        // Add new id to map
+        GameManager.byId.set(this._id, this);
         // Remove from array and push to end
         const idx = GameManager.instances.indexOf(this);
         if (idx !== -1) {
@@ -77,5 +83,7 @@ export class GameManager {
         return this._id;
     }
 
-
+    static getById(id: string): GameManager | undefined {
+        return GameManager.byId.get(id);
+    }
 }
