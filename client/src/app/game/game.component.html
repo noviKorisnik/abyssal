@@ -4,15 +4,24 @@
     <h3>Game ID: {{ room.gameId }}</h3>
     <p>User ID: {{ room.player.userId }}</p>
   }
-  @if (lobby) {
+  @if (state) {
+    <h3>Game State:</h3>
+    <p>Phase: {{ state.phase }}</p>
+    <p>Game ID: {{ state.gameId }}</p>
     <h3>Lobby Players:</h3>
     <ul>
-      @for (player of lobby.players; track player.userId) {
+      @for (player of state.players; track player.userId) {
         <li>
           {{ player.userId }} - {{ player.connected ? 'Connected' : 'Disconnected' }}
         </li>
       }
     </ul>
+    @if (state.ready) {
+      <h3>Ready State:</h3>
+      <p>Wait Time: {{ state.ready.waitTime }} ms</p>
+      <p>Countdown Timer: {{ state.ready.countdownTimer }} ms</p>
+      <p>Quick Start Enabled: {{ state.ready.quickStartEnabled ? 'Yes' : 'No' }}</p>
+    }
   }
   
   <!-- Game UI will be rendered here -->

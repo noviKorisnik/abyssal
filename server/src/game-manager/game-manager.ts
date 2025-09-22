@@ -1,6 +1,5 @@
-import { connect } from "http2";
 import { GameConfig } from "../game-config";
-import { GamePlayer, GameState } from "../game-setup";
+import { GamePlayer, GameState } from "../game-model";
 
 export class GameManager {
     // Track sockets for each game manager (room)
@@ -12,6 +11,9 @@ export class GameManager {
     private state: GameState = 'ready';
     private players: GamePlayer[] = [];
     private config: GameConfig;
+
+    private lobbyStartTimestamp: number | null = null;
+    private lobbyTimeout: NodeJS.Timeout | null = null;
 
     private constructor(initialPlayer: GamePlayer) {
         this.config = initialPlayer.setup.config;
@@ -49,25 +51,42 @@ export class GameManager {
             // e.g., update game state, notify other players
         });
         socket.send(JSON.stringify({ type: 'joined', gameId: this.id, player }));
-        this.broadcast({ type: 'lobby', players: this.playerList() });
+        this.broadcast();
     }
 
     removeSocket(socket: any) {
         this.sockets.delete(socket);
-        this.broadcast({ type: 'lobby', players: this.playerList() });
+        this.broadcast();
     }
 
-    // Broadcast a message to all sockets in this room
-    broadcast(message: any) {
-        const msg = typeof message === 'string' ? message : JSON.stringify(message);
-        for (const sock of this.sockets) {
-            try {
-                sock.send(msg);
-            } catch (err) {
-                // Optionally handle broken sockets
+    private broadcast() {
+        let ready = undefined;
+        if (this.state === 'ready') {
+            let countdownTimer = 0;
+            const waitTime = (this.config.lobbyWaitSeconds ?? 60) * 1000;
+            if (this.lobbyStartTimestamp && this.config.lobbyWaitSeconds) {
+                countdownTimer = Math.max(0, waitTime - (Date.now() - this.lobbyStartTimestamp));
             }
+            const quickStartEnabled = this.players.length >= (this.config.minPlayers ?? 2) && countdownTimer <= waitTime / 2;// could be also another config parameter
+            ready = {
+                waitTime,
+                countdownTimer,
+                quickStartEnabled,
+            };
+        }
+        const message = {
+            type: 'state',
+            phase: this.state,
+            gameId: this.id,
+            players: this.playerList(),
+            ready
+        };
+        const msg = JSON.stringify(message);
+        for (const sock of this.sockets) {
+            try { sock.send(msg); } catch (err) { /* handle error */ }
         }
     }
+
 
     private playerList() {
         return this.players.map(p => ({
@@ -86,7 +105,24 @@ export class GameManager {
     private addPlayer(player: GamePlayer) {
         console.log("Adding player to game", this._id, player.userId);
         if (this.players.length === 0) {
-            this.config = player.setup.config;
+            this.config = JSON.parse(JSON.stringify(player.setup.config));
+            this.lobbyStartTimestamp = Date.now();
+            if (this.lobbyTimeout) {
+                clearTimeout(this.lobbyTimeout);
+            }
+            this.lobbyTimeout = setTimeout(() => {
+                if (this.state === 'ready') {
+                    this.activateGame();
+                }
+            }, (this.config.lobbyWaitSeconds ?? 60) * 1000);
+
+            // Add half-time broadcast
+            const halfTime = ((this.config.lobbyWaitSeconds ?? 60) * 1000) / 2;
+            setTimeout(() => {
+                if (this.state === 'ready') {
+                    this.broadcast();
+                }
+            }, halfTime);
         }
         this.players.push(player);
         if (this.players.length === (this.config?.maxPlayers ?? 4)) {
@@ -96,8 +132,14 @@ export class GameManager {
 
     private activateGame() {
         this.state = 'active';
+        if (this.lobbyTimeout) {
+            clearTimeout(this.lobbyTimeout);
+            this.lobbyTimeout = null;
+        }
         setTimeout(() => {
+            // create ai players if needed
             // Notify players game is starting
+            this.broadcast();
         });
     }
 

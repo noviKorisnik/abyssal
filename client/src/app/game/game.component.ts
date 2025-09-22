@@ -5,8 +5,17 @@ import { ActivatedRoute } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { GameSetup } from '../game-setup/game-setup.model';
 
-interface Lobby {
+type GameState = 'ready' | 'active' | 'done';
+
+interface GameStatusMessage {
+  phase: GameState;
+  gameId: string;
   players: Array<{ userId: string; connected: boolean }>;
+  ready?: {
+    waitTime: number;
+    countdownTimer: number;
+    quickStartEnabled: boolean;
+  };
 }
 interface GameRoom {
   gameId: string;
@@ -26,7 +35,7 @@ export class GameComponent implements OnInit, OnDestroy {
   userId: string = '';
   socket: GameSocket | null = null;
   room: GameRoom | null = null;
-  lobby: Lobby | null = null;
+  state: GameStatusMessage | null = null;
   gameState: any = null;
   connected: boolean = false;
   private userIdSub: Subscription | null = null;
@@ -72,9 +81,9 @@ export class GameComponent implements OnInit, OnDestroy {
 
   handleSocketMessage(data: any) {
     switch (data.type) {
-      case 'lobby':
-        console.log('[Socket] Lobby data:', data);
-        this.lobby = data;
+      case 'state':
+        console.log('[Socket] Game state data:', data);
+        this.state = data;
         break;
       case 'joined':
         console.log('[Socket] Joined confirmation:', data);
