@@ -1,5 +1,6 @@
 import { GameConfig } from "../game-config";
 import { GamePlayer, GameState } from "../game-model";
+import { AIManager } from '../ai-manager';
 
 export class GameManager {
     // Track sockets for each game manager (room)
@@ -244,21 +245,12 @@ export class GameManager {
      * TODO: Implement actual AI player logic.
      */
     private injectAIPlayers(count: number) {
-        // Stub: Add placeholder AI players
         for (let i = 0; i < count; i++) {
-            // Example: create a dummy AI player object
-            const aiPlayer = {
-                userId: `AI_${Date.now()}_${i}`,
-                setup: {
-                    config: this.config,
-                    board: [], // Dummy empty board
-                    ships: []  // Dummy empty ships
-                },
-                isAI: true
-            };
-            this.players.push(aiPlayer as GamePlayer);
+            const aiPlayer = AIManager.createAIPlayer(this.config);
+            this.players.push(aiPlayer);
+            this.sockets.add(aiPlayer);
+            aiPlayer.send(JSON.stringify({ type: 'joined', gameId: this.id, aiPlayer }));
         }
-        // Optionally broadcast updated player list
         this.broadcast();
     }
 
