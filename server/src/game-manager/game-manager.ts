@@ -224,16 +224,42 @@ export class GameManager {
     }
 
     private activateGame() {
+        // Inject AI players if not enough real players
+        if (this.players.length < (this.config.minPlayers ?? 2)) {
+            this.injectAIPlayers((this.config.minPlayers ?? 2) - this.players.length);
+        }
         this.state = 'active';
         if (this.lobbyTimeout) {
             clearTimeout(this.lobbyTimeout);
             this.lobbyTimeout = null;
         }
         setTimeout(() => {
-            // create ai players if needed
             // Notify players game is starting
             this.broadcast();
         });
+    }
+
+    /**
+     * Stub: Injects AI players to fill up to minPlayers before game starts.
+     * TODO: Implement actual AI player logic.
+     */
+    private injectAIPlayers(count: number) {
+        // Stub: Add placeholder AI players
+        for (let i = 0; i < count; i++) {
+            // Example: create a dummy AI player object
+            const aiPlayer = {
+                userId: `AI_${Date.now()}_${i}`,
+                setup: {
+                    config: this.config,
+                    board: [], // Dummy empty board
+                    ships: []  // Dummy empty ships
+                },
+                isAI: true
+            };
+            this.players.push(aiPlayer as GamePlayer);
+        }
+        // Optionally broadcast updated player list
+        this.broadcast();
     }
 
     /**
