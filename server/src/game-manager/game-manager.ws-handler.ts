@@ -12,26 +12,6 @@ export function handleGameManagerSocket(ws: WebSocket) {
       ws.send(JSON.stringify({ type: 'error', error: 'Invalid JSON' }));
       return;
     }
-
-    switch (data.type) {
-      case 'join':
-        handleJoin(ws, data);
-        break;
-      // Add more cases for other message types
-      default:
-        // expected that other message types will be handled by GameManager instance
-        // ws.send(JSON.stringify({ type: 'error', error: 'Unknown message type' }));
-    }
+    GameManager.processMessage(ws, data);
   });
-
-//   ws.send(JSON.stringify({ type: 'welcome', message: 'Welcome to Abyssal Game Manager WebSocket!' }));
-}
-
-function handleJoin(ws: WebSocket, data: any) {
-    const manager = GameManager.getById(data.gameId);
-    if (!manager) {
-        ws.send(JSON.stringify({ type: 'error', error: 'Game not found' }));
-        return;
-    }
-    manager.addSocket(ws, data.userId);
 }

@@ -32,59 +32,153 @@ export class GameManager {
         return manager;
     }
 
-    addSocket(socket: any, userId: string) {
-        socket.userId = userId;//this was suggested while I was typing... neat if can work
-        const player = this.players.find(p => p.userId === userId);
+    static processMessage(socket: any, data: any) {
+        if (!data || !data.type) {
+            socket.send(JSON.stringify({ type: 'error', error: 'Invalid message format' }));
+            return;
+        }
+        if (data.type === 'join') {
+            GameManager.processJoin(socket, data);
+            return;
+        }
+        if (!data.gameId) {
+            socket.send(JSON.stringify({ type: 'error', error: 'Missing gameId for action' }));
+            return;
+        }
+        const manager = GameManager.getById(data.gameId);
+        if (!manager) {
+            socket.send(JSON.stringify({ type: 'error', error: 'Game not found' }));
+            return;
+        }
+        manager.dispatch(data);
+    }
+
+
+    /**
+     * Static public entry point for handling a join request from a WebSocket.
+     * Finds manager, validates, attaches socket, and broadcasts state.
+     */
+    private static processJoin(socket: any, data: any) {
+        if (!data || !data.userId || !data.gameId) {
+            socket.send(JSON.stringify({ type: 'error', error: 'Missing userId or gameId' }));
+            return;
+        }
+        const manager = GameManager.getById(data.gameId);
+        if (!manager) {
+            socket.send(JSON.stringify({ type: 'error', error: 'Game not found' }));
+            return;
+        }
+        if (data.gameId !== manager.id) {
+            socket.send(JSON.stringify({ type: 'error', error: 'Game ID mismatch' }));
+            return;
+        }
+        const player = manager.players.find((p: GamePlayer) => p.userId === data.userId);
         if (!player) {
             socket.send(JSON.stringify({ type: 'error', error: 'Player not in game' }));
             return;
         }
-        socket.player = player;// attach player info to socket, also good if can work
-        this.sockets.add(socket);
-        socket.on('message', (data: any) => {
-            // Handle player message for this room/game
-            // e.g., parse action, update state, broadcast, etc.
-        });
+        socket.gameId = data.gameId;
+        socket.userId = data.userId;
+        socket.player = player;
+        manager.sockets.add(socket);
         socket.on('close', () => {
-            this.removeSocket(socket);
+            manager.removeSocket(socket);
             // Optionally: handle player disconnect logic here
-            // e.g., update game state, notify other players
         });
-        socket.send(JSON.stringify({ type: 'joined', gameId: this.id, player }));
-        this.broadcast();
+        socket.send(JSON.stringify({ type: 'joined', gameId: manager.id, player }));
+        manager.broadcast();
     }
 
-    removeSocket(socket: any) {
+    private static getById(id: string): GameManager | undefined {
+        return GameManager.byId.get(id);
+    }
+
+    private static get newUid(): string {
+        const { v4: uuidv4 } = require('uuid');
+        return uuidv4();
+    }
+
+    get id(): string {
+        return this._id;
+    }
+
+    private dispatch(msg: any) {
+        switch (msg.type) {
+            case 'quickStart':
+                this.handleQuickStart(msg.userId);
+                break;
+            case 'exit':
+                this.handleExit(msg.userId);
+                break;
+            // Future: handle other message types here
+            default:
+                console.warn(`Unhandled message type: ${msg.type}`);
+        }
+    }
+
+    private removeSocket(socket: any) {
         this.sockets.delete(socket);
         this.broadcast();
     }
 
-    private broadcast() {
-        let ready = undefined;
-        if (this.state === 'ready') {
-            let countdownTimer = 0;
-            const waitTime = (this.config.lobbyWaitSeconds ?? 60) * 1000;
-            if (this.lobbyStartTimestamp && this.config.lobbyWaitSeconds) {
-                countdownTimer = Math.max(0, waitTime - (Date.now() - this.lobbyStartTimestamp));
-            }
-            const quickStartEnabled = this.players.length >= (this.config.minPlayers ?? 2) && countdownTimer <= waitTime / 2;// could be also another config parameter
-            ready = {
-                waitTime,
-                countdownTimer,
-                quickStartEnabled,
-            };
+    private handleQuickStart(userId: string) {
+        if (this.quickStartEnabled) {
+            this.activateGame();
         }
+    }
+
+    private handleExit(userId: string) {
+        if (this.state !== 'ready') return;
+        this.players = this.players.filter(p => p.userId !== userId);
+        for (const sock of Array.from(this.sockets)) {
+            if (sock.userId === userId) {
+                try {
+                    sock.send(JSON.stringify({ type: 'kicked', reason: 'left' }));
+                } catch {}
+                this.sockets.delete(sock);
+            }
+        }
+        if (this.players.length === 0) {
+            this.reset();
+        } else {
+            this.broadcast();
+        }
+    }
+
+    private broadcast() {
         const message = {
             type: 'state',
             phase: this.state,
             gameId: this.id,
             players: this.playerList(),
-            ready
+            ready: this.readyState,
         };
         const msg = JSON.stringify(message);
         for (const sock of this.sockets) {
             try { sock.send(msg); } catch (err) { /* handle error */ }
         }
+    }
+
+    private get waitTime() {
+        return (this.config.lobbyWaitSeconds ?? 60) * 1000;
+    }
+    private get countdownTimer() {
+        if (this.lobbyStartTimestamp) {
+            return Math.max(0, this.waitTime - (Date.now() - this.lobbyStartTimestamp));
+        }
+        return 0;
+    }
+    private get quickStartEnabled() {
+        if (this.state !== 'ready') return false;
+        return this.players.length >= (this.config.minPlayers ?? 2) && this.countdownTimer <= this.waitTime / 2;// could be also another config parameter
+    }
+    private get readyState() {
+        if (this.state !== 'ready') return undefined;
+        return {
+            waitTime: this.waitTime,
+            countdownTimer: this.countdownTimer,
+            quickStartEnabled: this.quickStartEnabled,
+        };
     }
 
 
@@ -114,15 +208,14 @@ export class GameManager {
                 if (this.state === 'ready') {
                     this.activateGame();
                 }
-            }, (this.config.lobbyWaitSeconds ?? 60) * 1000);
+            }, (this.waitTime));
 
             // Add half-time broadcast
-            const halfTime = ((this.config.lobbyWaitSeconds ?? 60) * 1000) / 2;
             setTimeout(() => {
-                if (this.state === 'ready') {
+                if (this.quickStartEnabled) {
                     this.broadcast();
                 }
-            }, halfTime);
+            }, this.waitTime / 2);
         }
         this.players.push(player);
         if (this.players.length === (this.config?.maxPlayers ?? 4)) {
@@ -147,7 +240,7 @@ export class GameManager {
      * Reset manager for a new game after finishing/cleanup.
      * Assigns new id, clears players, sets state to 'ready'.
      */
-    reset(): void {
+    private reset(): void {
         // Remove old id from map
         GameManager.byId.delete(this._id);
         this._id = GameManager.newUid;
@@ -165,16 +258,6 @@ export class GameManager {
         this.sockets.clear();
     }
 
-    private static get newUid(): string {
-        const { v4: uuidv4 } = require('uuid');
-        return uuidv4();
-    }
 
-    get id(): string {
-        return this._id;
-    }
 
-    static getById(id: string): GameManager | undefined {
-        return GameManager.byId.get(id);
-    }
 }
