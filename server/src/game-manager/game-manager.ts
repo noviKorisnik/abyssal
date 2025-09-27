@@ -1,5 +1,5 @@
 import { GameConfig } from "../game-config";
-import { GamePlayer, GameState } from "../game-model";
+import { GamePlayer, GameState, GameStatusMessage } from "../game-model";
 import { AIManager } from '../ai-manager';
 
 export class GameManager {
@@ -11,14 +11,22 @@ export class GameManager {
     private _id: string = GameManager.newUid;
     private state: GameState = 'ready';
     private players: GamePlayer[] = [];
-    private config: GameConfig;
+    private config!: GameConfig;
 
     private lobbyStartTimestamp: number | null = null;
     private lobbyTimeout: NodeJS.Timeout | null = null;
 
-    private constructor(initialPlayer: GamePlayer) {
-        this.config = initialPlayer.setup.config;
-        this.addPlayer(initialPlayer);
+    // --- Turn management ---
+    private turnOrder: string[] = [];
+    private currentTurnIndex: number = 0;
+    private turnStartTimestamp: number | null = null;
+    private turnTimeout: NodeJS.Timeout | null = null;
+
+    private constructor(initialPlayer?: GamePlayer) {
+        if (initialPlayer) {
+            this.config = initialPlayer.setup.config;
+            this.addPlayer(initialPlayer);
+        }
     }
 
     static assignPlayerToRoom(player: GamePlayer): GameManager {
@@ -111,10 +119,21 @@ export class GameManager {
             case 'exit':
                 this.handleExit(msg.userId);
                 break;
-            // Future: handle other message types here
+            case 'pickCell':
+                this.handlePickCell(msg.userId, msg.cell);
+                break;
             default:
                 console.warn(`Unhandled message type: ${msg.type}`);
         }
+    }
+
+    // Handle player picking a cell
+    private handlePickCell(userId: string, cell: { x: number; y: number }) {
+        // TODO: Validate turn, process move, update game state, advance turn
+        console.log(`Player ${userId} picked cell (${cell.x},${cell.y})`);
+        // Implement game logic here
+        // After processing, call nextTurn() if move is valid
+        // this.nextTurn();
     }
 
     private removeSocket(socket: any) {
@@ -147,17 +166,48 @@ export class GameManager {
     }
 
     private broadcast() {
-        const message = {
+        const message: GameStatusMessage = {
             type: 'state',
             phase: this.state,
             gameId: this.id,
             players: this.playerList(),
             ready: this.readyState,
+            active: this.activeState,
+            done: this.doneState,
+            history: this.historyState,
+            boardLayout: this.boardLayoutState,
         };
         const msg = JSON.stringify(message);
         for (const sock of this.sockets) {
             try { sock.send(msg); } catch (err) { /* handle error */ }
         }
+    }
+
+    private get activeState() {
+        if (this.state !== 'active') return undefined;
+        return {
+            currentPlayerId: this.currentPlayerId,
+            turnTimeLimit: this.turnTimeLimit,
+            remainingTurnTime: this.remainingTurnTime,
+        };
+    }
+
+    private get doneState() {
+        if (this.state !== 'done') return undefined;
+        // Stub: implement when game ends
+        return undefined;
+    }
+
+    private get historyState() {
+        if (!['active', 'done'].includes(this.state)) return undefined;
+        // Stub: implement game history tracking
+        return undefined;
+    }
+
+    private get boardLayoutState() {
+        if (!['active', 'done'].includes(this.state)) return undefined;
+        // Stub: implement board layout tracking
+        return undefined;
     }
 
     private get waitTime() {
@@ -234,10 +284,51 @@ export class GameManager {
             clearTimeout(this.lobbyTimeout);
             this.lobbyTimeout = null;
         }
-        setTimeout(() => {
-            // Notify players game is starting
-            this.broadcast();
-        });
+        // Keep lobby order, randomize initial player
+        this.turnOrder = this.players.map(p => p.userId);
+        this.currentTurnIndex = Math.floor(Math.random() * this.turnOrder.length);
+        this.startTurnTimer();
+        this.broadcast();
+    }
+
+    private startTurnTimer() {
+        this.turnStartTimestamp = Date.now();
+        if (this.turnTimeout) {
+            clearTimeout(this.turnTimeout);
+        }
+        this.turnTimeout = setTimeout(() => {
+            // If time runs out, auto-pick a cell for current player
+            this.handleTurnTimeout();
+        }, this.turnTimeLimit);
+    }
+
+    private get turnTimeLimit() {
+    return (this.config.turnSeconds ?? 30) * 1000;
+    }
+
+    private get remainingTurnTime() {
+        if (this.turnStartTimestamp) {
+            return Math.max(0, this.turnTimeLimit - (Date.now() - this.turnStartTimestamp));
+        }
+        return this.turnTimeLimit;
+    }
+
+    private get currentPlayerId() {
+        return this.turnOrder[this.currentTurnIndex];
+    }
+
+    private handleTurnTimeout() {
+        // TODO: Implement random cell pick for current player
+        // For now, just log and move to next turn
+        console.log(`Turn timeout for player ${this.currentPlayerId}`);
+        // this.recordMove(this.currentPlayerId, this.pickRandomCell());
+        this.nextTurn();
+    }
+
+    private nextTurn() {
+        this.currentTurnIndex = (this.currentTurnIndex + 1) % this.turnOrder.length;
+        this.startTurnTimer();
+        this.broadcast();
     }
 
     /**

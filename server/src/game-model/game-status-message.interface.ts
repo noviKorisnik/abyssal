@@ -1,5 +1,19 @@
 import { GameState } from "./game-state.type";
 
+
+export interface GameTurn {
+  playerId: string;
+  cell: { x: number; y: number };
+  hits: string[];
+  sinks: string[];
+}
+
+export interface PlayerBoardLayer {
+  playerId: string;
+  revealedBoard: number[][];
+  sunkShips: Array<{ shipId: string; cells: Array<{ x: number; y: number }> }>;
+}
+
 export interface GameStatusMessage {
   type: 'state';
   phase: GameState;
@@ -10,7 +24,15 @@ export interface GameStatusMessage {
     countdownTimer: number;
     quickStartEnabled: boolean;
   };
-  // Add other phase objects as needed, e.g.:
-  // playing?: { ... }
-  // finished?: { ... }
+  active?: {
+    currentPlayerId: string;
+    turnTimeLimit: number;
+    remainingTurnTime: number;
+  };
+  done?: {
+    winnerId: string;
+    placements: Array<{ userId: string; rank: number }>;
+  };
+  history?: GameTurn[];
+  boardLayout?: PlayerBoardLayer[];
 }
