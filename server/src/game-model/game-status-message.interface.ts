@@ -13,6 +13,7 @@ export interface PlayerBoardLayer {
   playerId: string;
   revealedBoard: number[][];
   sunkShips: Array<{ shipId: string; cells: Array<{ x: number; y: number }> }>;
+  active: boolean; // true if player is still in the game
 }
 
 export interface BoardLayout {

@@ -3,6 +3,8 @@ import { GamePlayer, GameState, GameStatusMessage, GameTurn } from "../game-mode
 import { AIManager } from '../ai-manager';
 
 export class GameManager {
+    // Track eliminated players
+    private eliminatedPlayers: Set<string> = new Set();
     // Track sockets for each game manager (room)
     private sockets: Set<any> = new Set(); // Use 'any' for WebSocket type compatibility
     private static instances: GameManager[] = [];
@@ -137,6 +139,10 @@ export class GameManager {
 
     // Handle player picking a cell
     private handlePickCell(userId: string, cell: { x: number; y: number }) {
+        if (this.state !== 'active') {
+            console.warn(`Received pickCell in non-active state: ${this.state}`);
+            return;
+        }
         // 1. Validate turn ownership
         if (userId !== this.currentPlayerId) {
             console.warn(`Player ${userId} attempted move out of turn.`);
@@ -245,6 +251,15 @@ export class GameManager {
                 }
             }
         }
+        // Eliminate players whose ships are all sunk
+        for (const [playerId, layer] of this.playerBoards.entries()) {
+            if (this.eliminatedPlayers.has(playerId)) continue;
+            if (layer.ships.length > 0 && layer.ships.every(ship => ship.isSunk)) {
+                this.eliminatedPlayers.add(playerId);
+                // Remove from turnOrder
+                this.turnOrder = this.turnOrder.filter(id => id !== playerId);
+            }
+        }
     }
 
     // Check for game end: all other players' ships are sunk
@@ -318,8 +333,43 @@ export class GameManager {
 
     private get doneState() {
         if (this.state !== 'done') return undefined;
-        // Stub: implement when game ends
-        return undefined;
+        // Winner is the last active player
+        const activePlayers = this.players.map(p => p.userId).filter(id => !this.eliminatedPlayers.has(id));
+    const winnerId = activePlayers.length === 1 ? activePlayers[0] : "";
+
+        // Build placements: eliminated players in order, winner last (rank 1)
+        // For simplicity, use order of elimination from gameTurns
+        const eliminationOrder: string[] = [];
+        const alreadyAdded = new Set<string>();
+        for (const turn of this.gameTurns) {
+            for (const pid of turn.sinks) {
+                if (!alreadyAdded.has(pid) && this.eliminatedPlayers.has(pid)) {
+                    eliminationOrder.push(pid);
+                    alreadyAdded.add(pid);
+                }
+            }
+        }
+        // Add any eliminated players not in eliminationOrder (edge case)
+        for (const pid of this.eliminatedPlayers) {
+            if (!alreadyAdded.has(pid)) {
+                eliminationOrder.push(pid);
+                alreadyAdded.add(pid);
+            }
+        }
+        // Placements: rank 1 is winner, others get increasing rank
+        const placements: Array<{ userId: string; rank: number }> = [];
+        let rank = eliminationOrder.length + 1;
+        if (winnerId) {
+            placements.push({ userId: winnerId, rank: 1 });
+        }
+        for (let i = eliminationOrder.length - 1; i >= 0; i--) {
+            placements.push({ userId: eliminationOrder[i], rank });
+            rank--;
+        }
+        return {
+            winnerId,
+            placements
+        };
     }
 
     private get historyState() {
@@ -340,7 +390,7 @@ export class GameManager {
             baseBoard.push(row);
         }
 
-        // Build playerLayers
+        // Build playerLayers with 'active' field
         const playerLayers = Array.from(this.playerBoards.values()).map(layer => {
             // revealedBoard: 2D array of hits (1: hit, 0: not hit)
             const revealedBoard: number[][] = [];
@@ -359,7 +409,8 @@ export class GameManager {
             return {
                 playerId: layer.playerId,
                 revealedBoard,
-                sunkShips
+                sunkShips,
+                active: !this.eliminatedPlayers.has(layer.playerId) && this.state === 'active',
             };
         });
 
@@ -515,7 +566,10 @@ export class GameManager {
     }
 
     private nextTurn() {
-        this.currentTurnIndex = (this.currentTurnIndex + 1) % this.turnOrder.length;
+        if (this.turnOrder.length === 0) return;
+        do {
+            this.currentTurnIndex = (this.currentTurnIndex + 1) % this.turnOrder.length;
+        } while (this.eliminatedPlayers.has(this.turnOrder[this.currentTurnIndex]) && this.turnOrder.length > 1);
         this.startTurnTimer();
         this.broadcast();
     }
