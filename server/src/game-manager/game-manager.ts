@@ -1,5 +1,5 @@
 import { GameConfig } from "../game-config";
-import { GamePlayer, GameState, GameStatusMessage } from "../game-model";
+import { GamePlayer, GameState, GameStatusMessage, GameTurn } from "../game-model";
 import { AIManager } from '../ai-manager';
 
 export class GameManager {
@@ -24,6 +24,11 @@ export class GameManager {
 
     // Track all game turns (moves)
     private gameTurns: Array<{ playerId: string; cell: { x: number; y: number }; outcome?: any }> = [];
+
+    // Base layer: tracks all played cells
+    private baseBoard: Set<string> = new Set(); // e.g., "x,y" for each played cell
+    // Player layers: board and ships per player
+    private playerBoards: Map<string, PlayerBoardLayer> = new Map();
 
     private constructor(initialPlayer?: GamePlayer) {
         if (initialPlayer) {
@@ -169,14 +174,52 @@ export class GameManager {
             return false;
         }
         // Already picked check
-        return this.gameTurns.every(turn => turn.cell.x !== cell.x || turn.cell.y !== cell.y);
+        // return this.gameTurns.every(turn => turn.cell.x !== cell.x || turn.cell.y !== cell.y);
+        
+    // Already picked check using baseBoard
+    return !this.baseBoard.has(`${cell.x},${cell.y}`);
 
     }
 
-    // Stub: Process move and return outcome
-    private processMove(userId: string, cell: { x: number; y: number }): any {
-        // TODO: Update board, check hits/sinks, return outcome object
-        return {};
+    // Process move and return GameTurn value (does not update board state)
+    private processMove(userId: string, cell: { x: number; y: number }): GameTurn {
+        // hits: list of playerIds whose ship was hit (but not sunk)
+        // sinks: list of playerIds whose ship was sunk (not in hits)
+        const hits: string[] = [];
+        const sinks: string[] = [];
+
+        for (const [opponentId, layer] of this.playerBoards.entries()) {
+            let hitShip = null;
+            let sunkShip = null;
+            for (const ship of layer.ships) {
+                const isHit = ship.cells.some(c => c.x === cell.x && c.y === cell.y);
+                if (isHit) {
+                    // Check if this hit would sink the ship (all cells of ship are hit)
+                    const allHits = ship.cells.every(sc =>
+                        this.gameTurns.some(turn => turn.cell.x === sc.x && turn.cell.y === sc.y)
+                        || (sc.x === cell.x && sc.y === cell.y)
+                    );
+                    if (allHits) {
+                        sunkShip = true;
+                    } else {
+                        hitShip = true;
+                    }
+                    break; // Only one ship per cell
+                }
+            }
+            if (sunkShip) {
+                sinks.push(opponentId);
+            } else if (hitShip) {
+                hits.push(opponentId);
+            }
+        }
+
+        return {
+            playerId: userId,
+            cell,
+            hits,
+            sinks
+        };
     }
 
     // Stub: Record move in history
@@ -328,6 +371,33 @@ export class GameManager {
         }
     }
 
+    private initPlayerBoards() {
+        this.playerBoards = new Map();
+        for (const player of this.players) {
+            // Build board and ships from player setup
+            const board: Array<Array<{ hasShip: boolean; isHit: boolean }>> = [];
+            for (let y = 0; y < this.config.boardRows; y++) {
+                const row: Array<{ hasShip: boolean; isHit: boolean }> = [];
+                for (let x = 0; x < this.config.boardCols; x++) {
+                    // Assume player.setup.board[y][x] exists and is boolean (hasShip)
+                    row.push({ hasShip: !!player.setup.board?.[y]?.[x], isHit: false });
+                }
+                board.push(row);
+            }
+            // Build ships from player.setup.ships, mapping cells to { x, y }
+            const ships = (player.setup.ships ?? []).map(ship => ({
+                shipId: ship.id,
+                cells: ship.cells.map(cell => ({ x: cell.col, y: cell.row })),
+                isSunk: false
+            }));
+            this.playerBoards.set(player.userId, {
+                playerId: player.userId,
+                board,
+                ships
+            });
+        }
+    }
+
     private activateGame() {
         // Inject AI players if not enough real players
         if (this.players.length < (this.config.minPlayers ?? 2)) {
@@ -341,6 +411,9 @@ export class GameManager {
         // Keep lobby order, randomize initial player
         this.turnOrder = this.players.map(p => p.userId);
         this.currentTurnIndex = Math.floor(Math.random() * this.turnOrder.length);
+        // Initialize board layout structures
+        this.baseBoard = new Set();
+        this.initPlayerBoards();
         this.startTurnTimer();
         this.broadcast();
     }
@@ -410,6 +483,8 @@ export class GameManager {
         this.state = 'ready';
         this.players = [];
         this.gameTurns = [];
+        this.baseBoard = new Set();
+        this.playerBoards = new Map();
         // Add new id to map
         GameManager.byId.set(this._id, this);
         // Remove from array and push to end
@@ -424,4 +499,11 @@ export class GameManager {
 
 
 
+}
+
+// Type for player board layer
+interface PlayerBoardLayer {
+    playerId: string;
+    board: Array<Array<{ hasShip: boolean; isHit: boolean }>>;
+    ships: Array<{ shipId: string; cells: Array<{ x: number; y: number }>; isSunk: boolean }>;
 }
