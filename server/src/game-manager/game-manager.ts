@@ -335,36 +335,45 @@ export class GameManager {
         if (this.state !== 'done') return undefined;
         // Winner is the last active player
         const activePlayers = this.players.map(p => p.userId).filter(id => !this.eliminatedPlayers.has(id));
-    const winnerId = activePlayers.length === 1 ? activePlayers[0] : "";
+        const winnerId = activePlayers.length === 1 ? activePlayers[0] : "";
 
-        // Build placements: eliminated players in order, winner last (rank 1)
-        // For simplicity, use order of elimination from gameTurns
-        const eliminationOrder: string[] = [];
-        const alreadyAdded = new Set<string>();
-        for (const turn of this.gameTurns) {
+        // Track elimination turn for each player
+        const eliminatedAtTurn: Record<string, number> = {};
+        for (let turnIdx = 0; turnIdx < this.gameTurns.length; turnIdx++) {
+            const turn = this.gameTurns[turnIdx];
             for (const pid of turn.sinks) {
-                if (!alreadyAdded.has(pid) && this.eliminatedPlayers.has(pid)) {
-                    eliminationOrder.push(pid);
-                    alreadyAdded.add(pid);
+                if (!(pid in eliminatedAtTurn) && this.eliminatedPlayers.has(pid)) {
+                    eliminatedAtTurn[pid] = turnIdx + 1; // 1-based turn index
                 }
             }
         }
-        // Add any eliminated players not in eliminationOrder (edge case)
+        // Add any eliminated players not in eliminatedAtTurn (edge case)
         for (const pid of this.eliminatedPlayers) {
-            if (!alreadyAdded.has(pid)) {
-                eliminationOrder.push(pid);
-                alreadyAdded.add(pid);
+            if (!(pid in eliminatedAtTurn)) {
+                eliminatedAtTurn[pid] = this.gameTurns.length; // eliminated at last turn
             }
         }
-        // Placements: rank 1 is winner, others get increasing rank
+        // Winner's turn: one higher than max
+        const winnerTurn = Math.max(0, ...Object.values(eliminatedAtTurn)) + 1;
+
+        // Group players by elimination turn
+        const turnToPlayers: Record<number, string[]> = {};
+        for (const [pid, turn] of Object.entries(eliminatedAtTurn)) {
+            if (!turnToPlayers[turn]) turnToPlayers[turn] = [];
+            turnToPlayers[turn].push(pid);
+        }
+        // Build placements: higher turn = better rank, winner gets best
+        const allTurns = Object.keys(turnToPlayers).map(Number).sort((a, b) => b - a);
+        let currentRank = 2; // winner is always rank 1
         const placements: Array<{ userId: string; rank: number }> = [];
-        let rank = eliminationOrder.length + 1;
         if (winnerId) {
             placements.push({ userId: winnerId, rank: 1 });
         }
-        for (let i = eliminationOrder.length - 1; i >= 0; i--) {
-            placements.push({ userId: eliminationOrder[i], rank });
-            rank--;
+        for (const turn of allTurns) {
+            for (const pid of turnToPlayers[turn]) {
+                placements.push({ userId: pid, rank: currentRank });
+            }
+            currentRank++;
         }
         return {
             winnerId,
@@ -558,11 +567,26 @@ export class GameManager {
     }
 
     private handleTurnTimeout() {
-        // TODO: Implement random cell pick for current player
-        // For now, just log and move to next turn
-        console.log(`Turn timeout for player ${this.currentPlayerId}`);
-        // this.recordMove(this.currentPlayerId, this.pickRandomCell());
-        this.nextTurn();
+        // Pick a random available cell for the current player
+        const availableCells: Array<{ x: number; y: number }> = [];
+        for (let y = 0; y < this.config.boardRows; y++) {
+            for (let x = 0; x < this.config.boardCols; x++) {
+                if (!this.baseBoard.has(`${x},${y}`)) {
+                    availableCells.push({ x, y });
+                }
+            }
+        }
+        if (availableCells.length === 0) {
+            // No available cells, just skip turn
+            console.log(`Turn timeout for player ${this.currentPlayerId}, but no available cells.`);
+            this.nextTurn();
+            return;
+        }
+        // Pick random cell
+        const pick = availableCells[Math.floor(Math.random() * availableCells.length)];
+        console.log(`Turn timeout for player ${this.currentPlayerId}, auto-picking cell (${pick.x},${pick.y})`);
+        // Call handlePickCell as if player picked this cell
+        this.handlePickCell(this.currentPlayerId, pick);
     }
 
     private nextTurn() {
@@ -601,6 +625,21 @@ export class GameManager {
         this.gameTurns = [];
         this.baseBoard = new Set();
         this.playerBoards = new Map();
+        // Clear eliminated players
+        this.eliminatedPlayers.clear();
+        // Reset turn state
+        this.turnOrder = [];
+        this.currentTurnIndex = 0;
+        this.turnStartTimestamp = null;
+        // Clear timers
+        if (this.lobbyTimeout) {
+            clearTimeout(this.lobbyTimeout);
+            this.lobbyTimeout = null;
+        }
+        if (this.turnTimeout) {
+            clearTimeout(this.turnTimeout);
+            this.turnTimeout = null;
+        }
         // Add new id to map
         GameManager.byId.set(this._id, this);
         // Remove from array and push to end
