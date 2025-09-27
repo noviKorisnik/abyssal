@@ -23,7 +23,7 @@ export class GameManager {
     private turnTimeout: NodeJS.Timeout | null = null;
 
     // Track all game turns (moves)
-    private gameTurns: Array<{ playerId: string; cell: { x: number; y: number }; outcome?: any }> = [];
+    private gameTurns: GameTurn[] = [];
 
     // Base layer: tracks all played cells
     private baseBoard: Set<string> = new Set(); // e.g., "x,y" for each played cell
@@ -153,8 +153,8 @@ export class GameManager {
         // TODO: Implement game-specific logic here
         const moveOutcome = this.processMove(userId, cell);
 
-        // 4. Update history (stub)
-        this.recordMoveHistory(userId, cell, moveOutcome);
+        // 4. Apply move: update all game turn dependent structures
+        this.applyMove(moveOutcome);
 
         if (this.isGameDone()) {
             this.state = 'done';
@@ -222,15 +222,42 @@ export class GameManager {
         };
     }
 
-    // Stub: Record move in history
-    private recordMoveHistory(userId: string, cell: { x: number; y: number }, outcome: any): void {
-        // TODO: Push move to history array
+    // Apply move: update gameTurns, baseBoard, and playerBoards
+    private applyMove(turn: GameTurn): void {
+        // Add to history
+        this.gameTurns.push(turn);
+        // Update baseBoard
+        this.baseBoard.add(`${turn.cell.x},${turn.cell.y}`);
+        // Update playerBoards: mark hits and sunk ships
+        for (const playerId of [...turn.hits, ...turn.sinks]) {
+            const layer = this.playerBoards.get(playerId);
+            if (!layer) continue;
+            // Mark cell as hit on board
+            if (layer.board[turn.cell.y] && layer.board[turn.cell.y][turn.cell.x]) {
+                layer.board[turn.cell.y][turn.cell.x].isHit = true;
+            }
+            // If sunk, mark ship as sunk
+            if (turn.sinks.includes(playerId)) {
+                for (const ship of layer.ships) {
+                    if (ship.cells.some(c => c.x === turn.cell.x && c.y === turn.cell.y)) {
+                        ship.isSunk = true;
+                    }
+                }
+            }
+        }
     }
 
-    // Stub: Check for game end
+    // Check for game end: all other players' ships are sunk
     private isGameDone(): boolean {
-        // TODO: Implement win/lose/draw condition check
-        return false;
+        for (const [playerId, layer] of this.playerBoards.entries()) {
+            if (playerId === this.currentPlayerId) continue;
+            // If any other player has at least one unsunk ship, game is not done
+            if (layer.ships.some(ship => !ship.isSunk)) {
+                return false;
+            }
+        }
+        // All other players' ships are sunk
+        return true;
     }
 
     private removeSocket(socket: any) {
@@ -297,14 +324,49 @@ export class GameManager {
 
     private get historyState() {
         if (!['active', 'done'].includes(this.state)) return undefined;
-        // Stub: implement game history tracking
-        return undefined;
+        // Return full game history
+        return this.gameTurns.slice();
     }
 
     private get boardLayoutState() {
         if (!['active', 'done'].includes(this.state)) return undefined;
-        // Stub: implement board layout tracking
-        return undefined;
+        // Build baseBoard as 2D array (0: not played, 1: played)
+        const baseBoard: number[][] = [];
+        for (let y = 0; y < this.config.boardRows; y++) {
+            const row: number[] = [];
+            for (let x = 0; x < this.config.boardCols; x++) {
+                row.push(this.baseBoard.has(`${x},${y}`) ? 1 : 0);
+            }
+            baseBoard.push(row);
+        }
+
+        // Build playerLayers
+        const playerLayers = Array.from(this.playerBoards.values()).map(layer => {
+            // revealedBoard: 2D array of hits (1: hit, 0: not hit)
+            const revealedBoard: number[][] = [];
+            for (let y = 0; y < this.config.boardRows; y++) {
+                const row: number[] = [];
+                for (let x = 0; x < this.config.boardCols; x++) {
+                    row.push(layer.board[y][x].isHit ? 1 : 0);
+                }
+                revealedBoard.push(row);
+            }
+            // sunkShips: list of sunk ships and their cells
+            const sunkShips = layer.ships.filter(ship => ship.isSunk).map(ship => ({
+                shipId: ship.shipId,
+                cells: ship.cells
+            }));
+            return {
+                playerId: layer.playerId,
+                revealedBoard,
+                sunkShips
+            };
+        });
+
+        return {
+            baseBoard,
+            playerLayers
+        };
     }
 
     private get waitTime() {
