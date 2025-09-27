@@ -22,6 +22,9 @@ export class GameManager {
     private turnStartTimestamp: number | null = null;
     private turnTimeout: NodeJS.Timeout | null = null;
 
+    // Track all game turns (moves)
+    private gameTurns: Array<{ playerId: string; cell: { x: number; y: number }; outcome?: any }> = [];
+
     private constructor(initialPlayer?: GamePlayer) {
         if (initialPlayer) {
             this.config = initialPlayer.setup.config;
@@ -129,11 +132,62 @@ export class GameManager {
 
     // Handle player picking a cell
     private handlePickCell(userId: string, cell: { x: number; y: number }) {
-        // TODO: Validate turn, process move, update game state, advance turn
-        console.log(`Player ${userId} picked cell (${cell.x},${cell.y})`);
-        // Implement game logic here
-        // After processing, call nextTurn() if move is valid
-        // this.nextTurn();
+        // 1. Validate turn ownership
+        if (userId !== this.currentPlayerId) {
+            console.warn(`Player ${userId} attempted move out of turn.`);
+            return;
+        }
+
+        // 2. Validate cell selection (stub: implement bounds and already-picked check)
+        if (!this.isCellValid(cell)) {
+            console.warn(`Player ${userId} picked invalid cell (${cell.x},${cell.y})`);
+            return;
+        }
+
+        // 3. Process move (stub: update board, check hits/sinks)
+        // TODO: Implement game-specific logic here
+        const moveOutcome = this.processMove(userId, cell);
+
+        // 4. Update history (stub)
+        this.recordMoveHistory(userId, cell, moveOutcome);
+
+        if (this.isGameDone()) {
+            this.state = 'done';
+            this.broadcast();
+        } else {
+            this.nextTurn();
+        }
+    }
+
+    // Stub: Validate cell selection
+    private isCellValid(cell: { x: number; y: number }): boolean {
+        // Bounds check
+        if (
+            cell.x < 0 || cell.x >= this.config.boardCols ||
+            cell.y < 0 || cell.y >= this.config.boardRows
+        ) {
+            return false;
+        }
+        // Already picked check
+        return this.gameTurns.every(turn => turn.cell.x !== cell.x || turn.cell.y !== cell.y);
+
+    }
+
+    // Stub: Process move and return outcome
+    private processMove(userId: string, cell: { x: number; y: number }): any {
+        // TODO: Update board, check hits/sinks, return outcome object
+        return {};
+    }
+
+    // Stub: Record move in history
+    private recordMoveHistory(userId: string, cell: { x: number; y: number }, outcome: any): void {
+        // TODO: Push move to history array
+    }
+
+    // Stub: Check for game end
+    private isGameDone(): boolean {
+        // TODO: Implement win/lose/draw condition check
+        return false;
     }
 
     private removeSocket(socket: any) {
@@ -355,6 +409,7 @@ export class GameManager {
         this._id = GameManager.newUid;
         this.state = 'ready';
         this.players = [];
+        this.gameTurns = [];
         // Add new id to map
         GameManager.byId.set(this._id, this);
         // Remove from array and push to end
