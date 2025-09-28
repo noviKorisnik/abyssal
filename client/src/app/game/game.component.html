@@ -1,39 +1,13 @@
+
 <div class="game-container">
-  <h2>Game Room</h2>
-  @if (room) {
-    <h3>Game ID: {{ room.gameId }}</h3>
-    <p>User ID: {{ room.player.userId }}</p>
+  <!-- New: GameActiveComponent for active phase -->
+  @if (state?.phase === 'active') {
+    <app-game-active [state]="state" [setup]="room!.player" (pickCell)="onPickCell($event)"></app-game-active>
+  }
+  <!-- New: GameReadyComponent for ready phase -->
+  @if (state?.phase === 'ready') {
+    <app-game-ready [state]="state" (quickStart)="onQuickStart()" (leave)="onLeaveRoom()"></app-game-ready>
   }
 
-  @if (state) {
-    <h3>Game State:</h3>
-    <p>Phase: {{ state.phase }}</p>
-    <p>Game ID: {{ state.gameId }}</p>
-
-    @if (state.phase === 'active') {
-      <div class="active-board">
-        <h3>Active Game</h3>
-        <p>Here active board...</p>
-      </div>
-    } @else {
-      <h3>Lobby Players:</h3>
-      <ul>
-        @for (player of state.players; track player.userId) {
-          <li>
-            {{ player.userId }} - {{ player.connected ? 'Connected' : 'Disconnected' }}
-          </li>
-        }
-      </ul>
-      @if (state.ready) {
-        <h3>Ready State:</h3>
-        <p>Wait Time: {{ state.ready.waitTime }} ms</p>
-        <p>Countdown Timer: {{ countdown }} seconds</p>
-        <p>Quick Start Enabled: {{ state.ready.quickStartEnabled ? 'Yes' : 'No' }}</p>
-        <button type="button" [disabled]="!state.ready.quickStartEnabled" (click)="onQuickStart()">Quick Start</button>
-        <button type="button" (click)="onLeaveRoom()">Leave Room</button>
-      }
-    }
-  }
   
-  <!-- Game UI will be rendered here -->
 </div>

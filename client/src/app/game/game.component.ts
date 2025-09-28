@@ -4,37 +4,25 @@ import { GameSocket } from './game.socket';
 import { UserService } from '../user';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
-import { GameSetup } from '../game-setup/game-setup.model';
-
-type GameState = 'ready' | 'active' | 'done';
-
-interface GameStatusMessage {
-  phase: GameState;
-  gameId: string;
-  players: Array<{ userId: string; connected: boolean }>;
-  ready?: {
-    waitTime: number;
-    countdownTimer: number;
-    quickStartEnabled: boolean;
-  };
-}
-interface GameRoom {
-  gameId: string;
-  player: {
-    userId: string;
-    setup: GameSetup;
-  }
-}
+import { GameRoom, GameStatusMessage } from './game.model';
 
 import { CommonModule } from '@angular/common';
+import { GameReadyComponent } from './game-ready/game-ready.component';
+import { GameActiveComponent } from './game-active/game-active.component';
 
 @Component({
   selector: 'app-game',
   templateUrl: './game.component.html',
+  imports: [CommonModule, GameReadyComponent, GameActiveComponent],
   styleUrls: ['./game.component.scss'],
-  imports: [CommonModule]
+  // imports: [CommonModule]
 })
 export class GameComponent implements OnInit, OnDestroy {
+  onPickCell(cell: { x: number; y: number }) {
+    if (this.socket && this.state?.phase === 'active') {
+      this.socket.send({ type: 'pickCell', gameId: this.gameId, userId: this.userId, cell });
+    }
+  }
   trackUserId(index: number, player: { userId: string }) {
     return player.userId;
   }

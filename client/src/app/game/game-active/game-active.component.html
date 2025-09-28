@@ -1,0 +1,35 @@
+<div class="active-game">
+  <h2>Active Game</h2>
+  @if (state?.active) {
+    <p>Current Player: {{ state?.active?.currentPlayerId }}</p>
+    <p>Your Turn: {{ isPlayerTurn ? 'Yes' : 'No' }}</p>
+  <p>Turn Time Left: {{ turnCountdown }}s</p>
+    <div class="board">
+      @for (row of board; track $index) {
+        <div class="row">
+          @for (cell of row; track $index; let x = $index) {
+            <div class="cell-wrapper">
+              <div
+                [ngClass]="getCellClasses(x, board.indexOf(row))"
+                (click)="isPlayerTurn ? pickCell.emit({ x, y: board.indexOf(row) }) : null"
+              >
+                @let hits = getCellHits(x, board.indexOf(row));
+                @for (hit of hits; track hit; let i = $index) {
+                  <span
+                    [ngClass]="getPlayerColorClass(hit.playerId)"
+                    class="cell-hit"
+                    [style.top]="hit.sunk ? '50%' : (i === 0 ? '5%' : i === 1 ? '5%' : i === 2 ? '75%' : '75%')"
+                    [style.left]="hit.sunk ? '50%' : (i === 0 ? '5%' : i === 1 ? '75%' : i === 2 ? '5%' : '75%')"
+                    [style.transform]="hit.sunk ? 'translate(-50%, -50%) scale(1.5)' : 'none'"
+                  >
+                    {{ hit.sunk ? 'X' : 'x' }}
+                  </span>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  }
+</div>
