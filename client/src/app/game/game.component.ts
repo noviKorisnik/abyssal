@@ -51,7 +51,7 @@ export class GameComponent implements OnInit, OnDestroy {
       this.socket = new GameSocket(this.gameId, this.userId);
       this.socket.connect(
         (data) => {
-          console.log('[Socket] Message received:', data);
+          // console.log('[Socket] Message received:', data);
           this.handleSocketMessage(data);
         },
         () => {
@@ -80,7 +80,7 @@ export class GameComponent implements OnInit, OnDestroy {
   handleSocketMessage(data: any) {
     switch (data.type) {
       case 'state':
-        console.log('[Socket] Game state data:', data);
+        // console.log('[Socket] Game state data:', data);
         this.state = data;
         // If in lobby and ready state, start or update countdown
         if (data.phase === 'ready' && data.ready) {

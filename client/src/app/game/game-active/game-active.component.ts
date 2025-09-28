@@ -64,13 +64,33 @@ export class GameActiveComponent {
       if (classes.includes('cell-player') && classes.includes('cell-picked')) {
         classes.push('cell-player-picked');
       }
+
+      // Add hit/sunk classes for each player
+      this.playerLayers.forEach((layer, idx) => {
+        if (layer.revealedBoard[y]?.[x] === 1) {
+          // Check if part of sunk ship
+          let sunk = false;
+          for (const ship of layer.sunkShips) {
+            if (ship.cells.some((c: { x: number; y: number }) => c.x === x && c.y === y)) {
+              sunk = true;
+              break;
+            }
+          }
+          if (sunk) {
+            classes.push(`cell-player-${idx}-sunk`);
+          } else {
+            classes.push(`cell-player-${idx}-hit`);
+          }
+        }
+      });
+
       return classes;
     }
 
     getCellHits(x: number, y: number): Array<{ playerId: string; sunk: boolean }>{
       const hits: Array<{ playerId: string; sunk: boolean }> = [];
       for (const layer of this.playerLayers) {
-        if (layer.revealedBoard[y]?.[x] === 2) {
+        if (layer.revealedBoard[y]?.[x] === 1) {
           // Check if part of sunk ship
           let sunk = false;
           for (const ship of layer.sunkShips) {

@@ -13,18 +13,8 @@
                 [ngClass]="getCellClasses(x, board.indexOf(row))"
                 (click)="isPlayerTurn ? pickCell.emit({ x, y: board.indexOf(row) }) : null"
               >
-                @let hits = getCellHits(x, board.indexOf(row));
-                @for (hit of hits; track hit; let i = $index) {
-                  <span
-                    [ngClass]="getPlayerColorClass(hit.playerId)"
-                    class="cell-hit"
-                    [style.top]="hit.sunk ? '50%' : (i === 0 ? '5%' : i === 1 ? '5%' : i === 2 ? '75%' : '75%')"
-                    [style.left]="hit.sunk ? '50%' : (i === 0 ? '5%' : i === 1 ? '75%' : i === 2 ? '5%' : '75%')"
-                    [style.transform]="hit.sunk ? 'translate(-50%, -50%) scale(1.5)' : 'none'"
-                  >
-                    {{ hit.sunk ? 'X' : 'x' }}
-                  </span>
-                }
+              <div></div>
+                <!-- All hit/sunk markers are now handled by cell classes and CSS pseudo-elements -->
               </div>
             </div>
           }
