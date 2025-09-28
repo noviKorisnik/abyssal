@@ -65,6 +65,11 @@ export class GameActiveComponent {
         classes.push('cell-player-picked');
       }
 
+      // Add .active if player's turn and cell is not picked
+      if (this.isPlayerTurn && !classes.includes('cell-picked')) {
+        classes.push('active');
+      }
+
       // Add hit/sunk classes for each player
       this.playerLayers.forEach((layer, idx) => {
         if (layer.revealedBoard[y]?.[x] === 1) {
