@@ -1,7 +1,14 @@
 <div class="lobby">
   <h2>Lobby</h2>
-  @if (state?.ready) {
-  <p>Countdown: {{ countdown }}s</p>
+  @if (state?.ready && countdownSeconds > 0) {
+    <app-timer-bar 
+      [totalTime]="totalWaitTimeSeconds"
+      [remainingTime]="countdownSeconds"
+      color="#3399ff"
+      label="Starting">
+    </app-timer-bar>
+    <button (click)="quickStart.emit()" [disabled]="!state?.ready?.quickStartEnabled">Quick Start</button>
+  } @else if (state?.ready) {
     <button (click)="quickStart.emit()" [disabled]="!state?.ready?.quickStartEnabled">Quick Start</button>
   }
   <h3>Players</h3>

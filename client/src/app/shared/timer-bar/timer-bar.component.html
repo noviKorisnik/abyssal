@@ -1,0 +1,13 @@
+<div class="timer-bar">
+  <div class="timer-header">
+    <div class="timer-label">{{ label }}</div>
+    <div class="timer-display">{{ timeDisplay }}</div>
+  </div>
+  <div class="timer-track">
+    <div 
+      class="timer-progress"
+      [style.width.%]="progressPercentage"
+      [style.background-color]="color"
+    ></div>
+  </div>
+</div>

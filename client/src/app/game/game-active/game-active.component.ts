@@ -2,11 +2,12 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { GameStatusMessage, PlayerBoardLayer } from '../game.model';
 import { GameSetup } from '../../game-setup/game-setup.model';
+import { TimerBarComponent } from '../../shared/timer-bar/timer-bar.component';
 
 @Component({
   selector: 'app-game-active',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, TimerBarComponent],
   templateUrl: './game-active.component.html',
   styleUrls: ['./game-active.component.scss']
 })
@@ -14,9 +15,6 @@ export class GameActiveComponent {
   @Input() state!: GameStatusMessage | null;
   @Input() setup!: { userId: string; setup: GameSetup };
   @Output() pickCell = new EventEmitter<{ x: number; y: number }>();
-
-  turnCountdown: number = 0;
-  private turnCountdownInterval: any = null;
 
   private playerSetupCells: Set<string> = new Set();
 
@@ -31,12 +29,6 @@ export class GameActiveComponent {
           }
         }
       }
-    }
-    // Handle countdown logic
-    if (changes['state'] && this.state?.active) {
-      this.startTurnCountdown(this.state.active.remainingTurnTime);
-    } else {
-      this.clearTurnCountdownInterval();
     }
   }
 
@@ -160,34 +152,34 @@ export class GameActiveComponent {
       const idx = this.playerLayers.findIndex(l => l.playerId === playerId);
       return `player-${idx}`;
     }
-  // (removed duplicate ngOnChanges)
 
-  ngOnDestroy() {
-    this.clearTurnCountdownInterval();
-  }
-
-  startTurnCountdown(ms: number) {
-    this.turnCountdown = Math.max(0, Math.ceil(ms / 1000));
-    this.clearTurnCountdownInterval();
-    if (this.turnCountdown > 0) {
-      this.turnCountdownInterval = setInterval(() => {
-        if (this.turnCountdown > 0) {
-          this.turnCountdown--;
-        } else {
-          this.clearTurnCountdownInterval();
-        }
-      }, 1000);
+    get currentPlayerColor(): string {
+      if (!this.state?.active?.currentPlayerId) return '#3399ff';
+      const players = this.state?.players || [];
+      const playerIndex = players.findIndex(p => p.userId === this.state?.active?.currentPlayerId);
+      
+      // Use the same HSL colors as defined in SCSS
+      const colors = [
+        'hsl(312, 70%, 50%)', // Red-Orange
+        'hsl(24, 70%, 50%)',  // Yellow-Orange  
+        'hsl(96, 70%, 50%)',  // Yellow-Green
+        'hsl(168, 70%, 50%)'  // Teal
+      ];
+      
+      return colors[playerIndex % colors.length] || '#3399ff';
     }
-  }
-
-  clearTurnCountdownInterval() {
-    if (this.turnCountdownInterval) {
-      clearInterval(this.turnCountdownInterval);
-      this.turnCountdownInterval = null;
-    }
-  }
 
   get isPlayerTurn(): boolean {
     return !!this.state?.active && this.state.active.currentPlayerId === this.setup?.userId;
+  }
+
+  get turnTimeLimitSeconds(): number {
+    const timeLimit = this.state?.active?.turnTimeLimit || 15000;
+    return Math.floor(timeLimit / 1000);
+  }
+
+  get remainingTurnTimeSeconds(): number {
+    const remainingTime = this.state?.active?.remainingTurnTime || 0;
+    return Math.floor(remainingTime / 1000);
   }
 }

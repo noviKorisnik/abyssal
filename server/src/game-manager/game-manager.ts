@@ -23,6 +23,7 @@ export class GameManager {
     private currentTurnIndex: number = 0;
     private turnStartTimestamp: number | null = null;
     private turnTimeout: NodeJS.Timeout | null = null;
+    private turnSyncInterval: NodeJS.Timeout | null = null;
 
     // Track all game turns (moves)
     private gameTurns: GameTurn[] = [];
@@ -545,10 +546,31 @@ export class GameManager {
         if (this.turnTimeout) {
             clearTimeout(this.turnTimeout);
         }
+        if (this.turnSyncInterval) {
+            clearInterval(this.turnSyncInterval);
+        }
+        
         this.turnTimeout = setTimeout(() => {
             // If time runs out, auto-pick a cell for current player
             this.handleTurnTimeout();
         }, this.turnTimeLimit);
+
+        // Broadcast timer updates every 3 seconds to keep clients synchronized
+        // (reduced frequency since client now has smooth 25ms animation)
+        this.turnSyncInterval = setInterval(() => {
+            if (this.state === 'active' && this.turnStartTimestamp) {
+                this.broadcast();
+            } else {
+                this.clearTurnSyncInterval();
+            }
+        }, 3000);
+    }
+
+    private clearTurnSyncInterval() {
+        if (this.turnSyncInterval) {
+            clearInterval(this.turnSyncInterval);
+            this.turnSyncInterval = null;
+        }
     }
 
     private get turnTimeLimit() {
@@ -640,6 +662,7 @@ export class GameManager {
             clearTimeout(this.turnTimeout);
             this.turnTimeout = null;
         }
+        this.clearTurnSyncInterval();
         // Add new id to map
         GameManager.byId.set(this._id, this);
         // Remove from array and push to end

@@ -1,0 +1,42 @@
+.timer-bar {
+  margin: 0.5rem 0;
+}
+
+.timer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.25rem;
+}
+
+.timer-label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #333;
+}
+
+.timer-display {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #333;
+  min-width: 2rem;
+  text-align: right;
+}
+
+.timer-track {
+  width: 100%;
+  height: 8px;
+  background-color: rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+  position: relative;
+}
+
+.timer-progress {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.1s linear;
+  background-color: #3399ff; /* Default color, overridden by input */
+  margin-left: auto; /* Align to right */
+}

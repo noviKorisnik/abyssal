@@ -1,53 +1,28 @@
-import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges, OnDestroy } from '@angular/core';
+import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { GameStatusMessage } from '../game.model';
+import { TimerBarComponent } from '../../shared/timer-bar/timer-bar.component';
 
 @Component({
   selector: 'app-game-ready',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, TimerBarComponent],
   templateUrl: './game-ready.component.html',
   styleUrls: ['./game-ready.component.scss']
 })
-export class GameReadyComponent implements OnChanges, OnDestroy {
+export class GameReadyComponent {
   @Input() state!: GameStatusMessage | null;
   @Output() quickStart = new EventEmitter<void>();
   @Output() leave = new EventEmitter<void>();
 
-  countdown: number = 0;
-  private countdownInterval: any = null;
-
-  ngOnChanges(changes: SimpleChanges) {
-    if (changes['state'] && this.state?.ready) {
-      this.startCountdown(this.state.ready.countdownTimer);
-    } else {
-      this.clearCountdownInterval();
-    }
+  get countdownSeconds(): number {
+    if (!this.state?.ready?.countdownTimer) return 0;
+    return Math.floor(this.state.ready.countdownTimer / 1000);
   }
 
-  ngOnDestroy() {
-    this.clearCountdownInterval();
-  }
-
-  startCountdown(ms: number) {
-    this.countdown = Math.max(0, Math.floor(ms / 1000));
-    this.clearCountdownInterval();
-    if (this.countdown > 0) {
-      this.countdownInterval = setInterval(() => {
-        if (this.countdown > 0) {
-          this.countdown--;
-        } else {
-          this.clearCountdownInterval();
-        }
-      }, 1000);
-    }
-  }
-
-  clearCountdownInterval() {
-    if (this.countdownInterval) {
-      clearInterval(this.countdownInterval);
-      this.countdownInterval = null;
-    }
+  get totalWaitTimeSeconds(): number {
+    if (!this.state?.ready?.waitTime) return 0;
+    return Math.floor(this.state.ready.waitTime / 1000);
   }
 
   trackUserId(index: number, player: { userId: string }) {

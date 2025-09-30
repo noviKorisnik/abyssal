@@ -3,7 +3,13 @@
   @if (state?.active) {
     <p>Current Player: {{ state?.active?.currentPlayerId }}</p>
     <p>Your Turn: {{ isPlayerTurn ? 'Yes' : 'No' }}</p>
-  <p>Turn Time Left: {{ turnCountdown }}s</p>
+    
+    <app-timer-bar 
+      [totalTime]="turnTimeLimitSeconds"
+      [remainingTime]="remainingTurnTimeSeconds"
+      [color]="currentPlayerColor"
+      label="Turn">
+    </app-timer-bar>
     <div class="board">
       @for (row of board; track $index) {
         <div class="row">
