@@ -51,17 +51,28 @@ export class GameActiveComponent {
 
     getCellClasses(x: number, y: number): string[] {
       const classes = ['cell'];
-      // Player setup: use mapped Set for fast lookup
-      if (this.playerSetupCells.has(`${y},${x}`)) {
-        classes.push('cell-player');
+      
+      // Check if this cell is part of player's setup
+      const hasPlayerSetup = this.playerSetupCells.has(`${y},${x}`);
+      if (hasPlayerSetup) {
+        // Find player index
+        const players = this.state?.players || [];
+        const playerIndex = players.findIndex(p => p.userId === this.setup?.userId);
+        
+        if (playerIndex !== -1) {
+          // Determine setup state: open, hit, or sunk
+          const setupState = this.getSetupCellState(x, y);
+          classes.push(`cell-setup-player-${playerIndex}-${setupState}`);
+        }
       }
+      
       // Picked: use baseBoard for played cells
       if (this.board?.[y]?.[x] === 1) {
         classes.push('cell-picked');
       }
 
       // Both
-      if (classes.includes('cell-player') && classes.includes('cell-picked')) {
+      if (hasPlayerSetup && classes.includes('cell-picked')) {
         classes.push('cell-player-picked');
       }
 
@@ -90,6 +101,41 @@ export class GameActiveComponent {
       });
 
       return classes;
+    }
+
+    getSetupCellState(x: number, y: number): 'open' | 'hit' | 'sunk' {
+      // Check if this cell has been hit
+      const isHit = this.board?.[y]?.[x] === 1;
+      
+      if (!isHit) {
+        return 'open';
+      }
+      
+      // If hit, check if the entire ship is sunk
+      if (this.setup?.setup?.board) {
+        // Find the ship this cell belongs to
+        const cellData = this.setup.setup.board[y]?.[x];
+        if (cellData?.shipId) {
+          // Check if all cells of this ship are hit
+          const shipCells: {x: number, y: number}[] = [];
+          for (let row = 0; row < this.setup.setup.board.length; row++) {
+            for (let col = 0; col < this.setup.setup.board[row].length; col++) {
+              if (this.setup.setup.board[row][col]?.shipId === cellData.shipId) {
+                shipCells.push({x: col, y: row});
+              }
+            }
+          }
+          
+          // Check if all ship cells are hit in baseBoard
+          const allCellsHit = shipCells.every(cell => 
+            this.board?.[cell.y]?.[cell.x] === 1
+          );
+          
+          return allCellsHit ? 'sunk' : 'hit';
+        }
+      }
+      
+      return 'hit';
     }
 
     getCellHits(x: number, y: number): Array<{ playerId: string; sunk: boolean }>{
