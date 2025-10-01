@@ -1,3 +1,4 @@
+@use 'sass:map';
 // === VARIABLES ===
 // Base color settings
 $base-saturation: 70%;
@@ -65,43 +66,43 @@ $hit-marker-opacity: 0.85;
 .cell-player-0-hit::before, .cell-player-0-sunk::before {
   @extend .cell-player-disc;
   top: $corner-offset; left: $corner-offset;
-  border: 1px solid map-get($player-colors, 0);
+  border: 1px solid map.get($player-colors, 0);
   background: transparent;
 }
 .cell-player-0-sunk::before {
   @extend .cell-player-disc-sunk;
-  background: map-get($player-colors, 0);
+  background: map.get($player-colors, 0);
 }
 .cell-player-1-hit::after, .cell-player-1-sunk::after {
   @extend .cell-player-disc;
   top: $corner-offset; right: $corner-offset;
-  border: 1px solid map-get($player-colors, 1);
+  border: 1px solid map.get($player-colors, 1);
   background: transparent;
 }
 .cell-player-1-sunk::after {
   @extend .cell-player-disc-sunk;
-  background: map-get($player-colors, 1);
+  background: map.get($player-colors, 1);
 }
 // Player 2 (bottom-left) and 3 (bottom-right) on child div
 .cell-player-2-hit div::before, .cell-player-2-sunk div::before {
   @extend .cell-player-disc;
   bottom: $corner-offset; left: $corner-offset;
-  border: 1px solid map-get($player-colors, 2);
+  border: 1px solid map.get($player-colors, 2);
   background: transparent;
 }
 .cell-player-2-sunk div::before {
   @extend .cell-player-disc-sunk;
-  background: map-get($player-colors, 2);
+  background: map.get($player-colors, 2);
 }
 .cell-player-3-hit div::after, .cell-player-3-sunk div::after {
   @extend .cell-player-disc;
   bottom: $corner-offset; right: $corner-offset;
-  border: 1px solid map-get($player-colors, 3);
+  border: 1px solid map.get($player-colors, 3);
   background: transparent;
 }
 .cell-player-3-sunk div::after {
   @extend .cell-player-disc-sunk;
-  background: map-get($player-colors, 3);
+  background: map.get($player-colors, 3);
 }
 
 // Player setup circles (on second nested div)
@@ -121,17 +122,17 @@ $hit-marker-opacity: 0.85;
 @for $i from 0 through 3 {
   .cell-setup-player-#{$i}-open div:nth-child(2)::before {
     @extend .cell-setup-disc;
-    background: map-get($player-colors, $i);
+  background: map.get($player-colors, $i);
     opacity: $setup-open-opacity;
   }
   .cell-setup-player-#{$i}-hit div:nth-child(2)::before {
     @extend .cell-setup-disc;
-    background: map-get($player-colors, $i);
+  background: map.get($player-colors, $i);
     opacity: $setup-hit-opacity;
   }
   .cell-setup-player-#{$i}-sunk div:nth-child(2)::before {
     @extend .cell-setup-disc;
-    background: map-get($player-dark-colors, $i);
+  background: map.get($player-dark-colors, $i);
     opacity: $setup-sunk-opacity;
   }
 }
