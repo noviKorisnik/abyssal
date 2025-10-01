@@ -24,7 +24,7 @@ export interface BoardLayout {
 export interface GameStatusMessage {
   phase: GameState;
   gameId: string;
-  players: Array<{ userId: string; connected: boolean }>;
+  players: Array<{ userId: string; playerName?: string; connected: boolean }>;
   ready?: {
     waitTime: number;
     countdownTimer: number;
@@ -48,6 +48,7 @@ export interface GameRoom {
   gameId: string;
   player: {
     userId: string;
+    playerName?: string;
     setup: GameSetup;
   }
 }

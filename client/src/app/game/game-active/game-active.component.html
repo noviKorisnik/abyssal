@@ -1,32 +1,25 @@
 <div class="active-game">
-  <h2>Active Game</h2>
+  <h2>ABYSSAL</h2>
   @if (state?.active) {
-    <p>Current Player: {{ state?.active?.currentPlayerId }}</p>
-    <p>Your Turn: {{ isPlayerTurn ? 'Yes' : 'No' }}</p>
+    <app-player-status 
+      [state]="state"
+      [currentUserId]="setup.userId">
+    </app-player-status>
     
     <app-timer-bar 
       [totalTime]="turnTimeLimitSeconds"
       [remainingTime]="remainingTurnTimeSeconds"
       [color]="currentPlayerColor"
-      label="Turn">
+      [label]="getCurrentPlayerName()"
+      [isUserTurn]="isPlayerTurn">
     </app-timer-bar>
-    <div class="board">
-      @for (row of board; track $index) {
-        <div class="row">
-          @for (cell of row; track $index; let x = $index) {
-            <div class="cell-wrapper">
-              <div
-                [ngClass]="getCellClasses(x, board.indexOf(row))"
-                (click)="isPlayerTurn ? pickCell.emit({ x, y: board.indexOf(row) }) : null"
-              >
-              <div></div>
-              <div></div>
-                <!-- All hit/sunk markers are now handled by cell classes and CSS pseudo-elements -->
-              </div>
-            </div>
-          }
-        </div>
-      }
-    </div>
+    
+    <app-board
+      [board]="board"
+      [getCellClasses]="getCellClassesBound"
+      [isInteractive]="isPlayerTurn"
+      [showYourTurnIndicator]="isPlayerTurn"
+      (cellClick)="pickCell.emit($event)">
+    </app-board>
   }
 </div>

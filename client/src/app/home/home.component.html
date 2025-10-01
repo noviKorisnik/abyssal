@@ -1,2 +1,54 @@
-<h1>Welcome to Abyssal</h1>
-<button routerLink="/game-setup">New Game</button>
+<div class="home-container">
+  <h2>ABYSSAL</h2>
+  
+  <div class="subtitle">Multiplayer Battleship</div>
+  
+  <div class="button-group">
+    <button routerLink="/game-setup" class="primary-btn">New Game</button>
+    <button (click)="showHelp = true" class="secondary-btn">How to Play</button>
+  </div>
+</div>
+
+@if (showHelp) {
+  <div class="modal-overlay" (click)="showHelp = false">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <button class="modal-close" (click)="showHelp = false">×</button>
+      
+      @if (helpScreen === 0) {
+        <h2>Welcome to Abyssal</h2>
+        <p>A multiplayer tactical battleship game where 2-4 players compete to sink each other's ships.</p>
+        <ul class="help-list">
+          <li>Place your ships on the board</li>
+          <li>Take turns firing at opponent positions</li>
+          <li>Sink all opponent ships to win</li>
+        </ul>
+        <div class="modal-nav">
+          <button (click)="showHelp = false" class="secondary-btn">Close</button>
+          <button (click)="helpScreen = 1" class="primary-btn">Next</button>
+        </div>
+      }
+      
+      @if (helpScreen === 1) {
+        <h2>Game Setup</h2>
+        <p><strong>1. Choose Your Name</strong><br>Select from suggested names or get new ones.</p>
+        <p><strong>2. Generate Board</strong><br>Your ships will be randomly placed on the board.</p>
+        <p><strong>3. Ready Up</strong><br>Click Ready when satisfied with your ship placement.</p>
+        <div class="modal-nav">
+          <button (click)="helpScreen = 0" class="secondary-btn">Back</button>
+          <button (click)="helpScreen = 2" class="primary-btn">Next</button>
+        </div>
+      }
+      
+      @if (helpScreen === 2) {
+        <h2>Gameplay</h2>
+        <p><strong>Turn Timer</strong><br>Each player has limited time to make their move.</p>
+        <p><strong>Your Turn</strong><br>Click any unplayed cell to fire. The board will glow when it's your turn.</p>
+        <p><strong>Markers</strong><br>Colored discs in corners show hits/sinks for each player.</p>
+        <div class="modal-nav">
+          <button (click)="helpScreen = 1" class="secondary-btn">Back</button>
+          <button (click)="showHelp = false" class="primary-btn">Start Playing</button>
+        </div>
+      }
+    </div>
+  </div>
+}

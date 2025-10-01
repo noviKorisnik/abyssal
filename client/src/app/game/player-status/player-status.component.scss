@@ -1,0 +1,149 @@
+@use 'sass:map';
+
+// Import player colors from game-active styles
+$base-saturation: 70%;
+$base-lightness: 50%;
+
+$player-colors: (
+  0: hsl(312, $base-saturation, $base-lightness), // Red-Orange
+  1: hsl(24, $base-saturation, $base-lightness),  // Yellow-Orange  
+  2: hsl(96, $base-saturation, $base-lightness),  // Yellow-Green
+  3: hsl(168, $base-saturation, $base-lightness)  // Teal
+);
+
+.player-status-panel {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.75rem;
+  margin: 1rem 0;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+
+  // Mobile optimization - force 2 columns at 400px and below
+  @media (max-width: 400px) {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+    padding: 0.5rem;
+    margin: 0.5rem 0;
+  }
+}
+
+.player-status-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.6rem;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 6px;
+  border: 2px solid transparent;
+  transition: all 0.3s ease;
+
+  // Mobile adjustments
+  @media (max-width: 400px) {
+    padding: 0.35rem 0.5rem;
+    gap: 0.35rem;
+  }
+
+  // Status: In Game (normal state)
+  &[data-status="in-game"] {
+    .status-disc {
+      box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3);
+    }
+  }
+
+  // Status: On Turn (highlighted with glow on disc and darker background)
+  &[data-status="on-turn"] {
+    background: rgba(0, 0, 0, 0.45);
+
+    .status-disc {
+      box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.9), 
+                  0 0 16px 3px currentColor;
+    }
+  }
+
+  // Status: Done (hollow circle only)
+  &[data-status="done"] {
+    opacity: 0.6;
+
+    .status-disc {
+      background: transparent !important;
+      border: 3px solid currentColor;
+      box-shadow: none;
+    }
+
+    .player-name {
+      text-decoration: line-through;
+      opacity: 0.7;
+    }
+  }
+
+  // Status: Disconnected (very faded)
+  &[data-status="disconnected"] {
+    opacity: 0.3;
+
+    .status-disc {
+      box-shadow: none;
+    }
+
+    .player-name {
+      font-style: italic;
+    }
+  }
+
+  // Highlight current user
+  &.is-current-user {
+    border: 2px solid rgba(255, 255, 255, 0.6);
+    background: rgba(0, 0, 0, 0.35);
+
+    &[data-status="on-turn"] {
+      background: rgba(0, 0, 0, 0.5);
+    }
+  }
+}
+
+.status-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.status-disc {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+
+  // Even smaller on mobile
+  @media (max-width: 400px) {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+// Player color assignments
+@for $i from 0 through 3 {
+  .player-#{$i} {
+    background: map.get($player-colors, $i);
+    color: map.get($player-colors, $i);
+  }
+}
+
+.player-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.player-name {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: white;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+  transition: all 0.3s ease;
+
+  // Mobile: smaller font
+  @media (max-width: 480px) {
+    font-size: 0.85rem;
+  }
+}
+

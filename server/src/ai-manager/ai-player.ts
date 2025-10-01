@@ -5,12 +5,14 @@ import { GamePlayer, GameSetup } from '../game-model';
  */
 export class AIPlayer implements GamePlayer {
   userId: string;
+  playerName: string;
   setup: GameSetup;
   isAI: boolean = true;
   private listeners: { [event: string]: Function[] } = {};
 
-  constructor(userId: string, setup: GameSetup) {
+  constructor(userId: string, setup: GameSetup, playerName: string) {
     this.userId = userId;
+    this.playerName = playerName;
     this.setup = setup;
     // console.log(`[AIPlayer] Created AI player with userId=${userId}`);
     // console.log(`[AIPlayer] Setup:`, JSON.stringify(setup, null, 2));

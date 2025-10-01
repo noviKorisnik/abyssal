@@ -456,6 +456,7 @@ export class GameManager {
     private playerList() {
         return this.players.map(p => ({
             userId: p.userId,
+            playerName: p.playerName,
             connected: Array.from(this.sockets).some(sock => sock.userId === p.userId)
         }));
     }

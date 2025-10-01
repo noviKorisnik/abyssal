@@ -1,0 +1,18 @@
+<div class="board" [class.your-turn]="showYourTurnIndicator">
+  @for (row of board; track trackByIndex($index)) {
+    <div class="row">
+      @for (cell of row; track trackByIndex($index); let x = $index) {
+        <div class="cell-wrapper">
+          <div
+            [ngClass]="getCellClasses(x, board.indexOf(row))"
+            (click)="onCellClick(x, board.indexOf(row))"
+          >
+            <div></div>
+            <div></div>
+            <!-- All hit/sunk markers are now handled by cell classes and CSS pseudo-elements -->
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>

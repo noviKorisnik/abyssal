@@ -12,6 +12,7 @@ import { TimerBarComponent } from '../../shared/timer-bar/timer-bar.component';
 })
 export class GameReadyComponent {
   @Input() state!: GameStatusMessage | null;
+  @Input() currentUserId!: string;
   @Output() quickStart = new EventEmitter<void>();
   @Output() leave = new EventEmitter<void>();
 
@@ -23,6 +24,10 @@ export class GameReadyComponent {
   get totalWaitTimeSeconds(): number {
     if (!this.state?.ready?.waitTime) return 0;
     return Math.floor(this.state.ready.waitTime / 1000);
+  }
+
+  isCurrentPlayer(userId: string): boolean {
+    return userId === this.currentUserId;
   }
 
   trackUserId(index: number, player: { userId: string }) {

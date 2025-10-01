@@ -1,20 +1,48 @@
-<h1>Board Setup</h1>
-<div class="controls">
-	<button (click)="generateBoard()">Generate</button>
-	<button (click)="confirmReady()" [disabled]="!boardGenerated">Ready</button>
-</div>
-<div class="board">
-		<table>
-			<tbody>
-				@for (row of boardRows; track row) {
-					<tr>
-						@for (col of boardCols; track col) {
-<td class="cell" [class.ship]="getCell(row, col)?.shipId">
-  <!-- Cell content goes here -->
-</td>
-						}
-					</tr>
-				}
-			</tbody>
-		</table>
+<div class="setup-container">
+  <h1>ABYSSAL</h1>
+
+  <div class="player-name-section">
+    <div class="player-name-display">
+      <span class="player-name-label">{{ playerName || 'Not selected' }}</span>
+      <button (click)="toggleNameSelector()" class="change-name-btn">
+        {{ showNameSelector ? 'Hide' : 'Change' }}
+      </button>
+    </div>
+    
+    @if (showNameSelector) {
+      <div class="name-selector">
+        <label for="name-select">Choose your name:</label>
+        <select id="name-select" [(ngModel)]="playerName" class="name-select">
+          @for (name of nameSuggestions; track name) {
+            <option [value]="name">{{ name }}</option>
+          }
+        </select>
+        <button (click)="requestNewNames()" [disabled]="loadingNames" class="refresh-names-btn">
+          {{ loadingNames ? 'Loading...' : 'Get New Names' }}
+        </button>
+      </div>
+    }
+  </div>
+
+  <div class="board">
+    <table>
+      <tbody>
+        @for (row of boardRows; track row) {
+          <tr>
+            @for (col of boardCols; track col) {
+              <td class="cell" [class.ship]="getCell(row, col)?.shipId">
+                <!-- Cell content goes here -->
+              </td>
+            }
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <div class="button-container controls">
+	  <button (click)="generateBoard()" class="secondary-btn">Generate</button>
+	  <button (click)="confirmReady()" [disabled]="!boardGenerated || !playerName" class="primary-btn">Ready</button>
+	  <button (click)="goBack()" class="secondary-btn">Leave</button>
+  </div>
 </div>

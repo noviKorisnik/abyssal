@@ -13,6 +13,7 @@ export class TimerBarComponent implements OnChanges, OnDestroy {
   @Input() remainingTime!: number; // Remaining time in seconds (triggers countdown start)
   @Input() color: string = '#3399ff'; // Color for the progress bar
   @Input() label: string = 'Time Left'; // Label for the timer
+  @Input() isUserTurn: boolean = false; // Whether it's the current user's turn
 
   currentTime: number = 0;
   private countdownInterval: any = null;

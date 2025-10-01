@@ -26,7 +26,7 @@ export interface GameStatusMessage {
   type: 'state';
   phase: GameState;
   gameId: string;
-  players: Array<{ userId: string; connected: boolean }>;
+  players: Array<{ userId: string; playerName?: string; connected: boolean }>;
   ready?: {
     waitTime: number;
     countdownTimer: number;

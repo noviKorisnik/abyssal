@@ -6,7 +6,12 @@
   }
   <!-- New: GameReadyComponent for ready phase -->
   @if (state?.phase === 'ready') {
-    <app-game-ready [state]="state" (quickStart)="onQuickStart()" (leave)="onLeaveRoom()"></app-game-ready>
+    <app-game-ready 
+      [state]="state" 
+      [currentUserId]="userId"
+      (quickStart)="onQuickStart()" 
+      (leave)="onLeaveRoom()">
+    </app-game-ready>
   }
 
   

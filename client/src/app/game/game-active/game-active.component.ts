@@ -3,11 +3,13 @@ import { CommonModule } from '@angular/common';
 import { GameStatusMessage, PlayerBoardLayer } from '../game.model';
 import { GameSetup } from '../../game-setup/game-setup.model';
 import { TimerBarComponent } from '../../shared/timer-bar/timer-bar.component';
+import { PlayerStatusComponent } from '../player-status/player-status.component';
+import { BoardComponent } from '../../shared/board/board.component';
 
 @Component({
   selector: 'app-game-active',
   standalone: true,
-  imports: [CommonModule, TimerBarComponent],
+  imports: [CommonModule, TimerBarComponent, PlayerStatusComponent, BoardComponent],
   templateUrl: './game-active.component.html',
   styleUrls: ['./game-active.component.scss']
 })
@@ -17,6 +19,9 @@ export class GameActiveComponent {
   @Output() pickCell = new EventEmitter<{ x: number; y: number }>();
 
   private playerSetupCells: Set<string> = new Set();
+  
+  // Bound version of getCellClasses for board component
+  getCellClassesBound = (x: number, y: number) => this.getCellClasses(x, y);
 
   ngOnChanges(changes: any) {
     // Map setup cells for fast lookup
@@ -171,6 +176,12 @@ export class GameActiveComponent {
 
   get isPlayerTurn(): boolean {
     return !!this.state?.active && this.state.active.currentPlayerId === this.setup?.userId;
+  }
+
+  getCurrentPlayerName(): string {
+    if (!this.state?.active?.currentPlayerId) return 'Unknown';
+    const player = this.state.players?.find(p => p.userId === this.state?.active?.currentPlayerId);
+    return player?.playerName || player?.userId || 'Unknown';
   }
 
   get turnTimeLimitSeconds(): number {

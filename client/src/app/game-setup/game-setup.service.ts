@@ -12,7 +12,7 @@ export class GameSetupService {
 
   constructor(private http: HttpClient, private userService: UserService) {}
 
-  sendReady(setup: GameSetup): Observable<{ gameId: string }> {
+  sendReady(setup: GameSetup, playerName?: string): Observable<{ gameId: string }> {
     return this.userService.getUserId$().pipe(
       take(1),
       switchMap(userId =>
@@ -20,6 +20,7 @@ export class GameSetupService {
           `${this.apiUrl}/game-manager/assign-player`,
           {
             userId,
+            playerName,
             setup,
           }
         )

@@ -1,0 +1,16 @@
+<div class="player-status-panel">
+  @for (playerStatus of playerStatuses; track playerStatus.userId) {
+    <div 
+      class="player-status-item"
+      [class.is-current-user]="isCurrentPlayer(playerStatus.userId)"
+      [attr.data-status]="playerStatus.status"
+      [attr.data-player]="playerStatus.colorIndex">
+      <div class="status-indicator">
+        <div class="status-disc player-{{playerStatus.colorIndex}}"></div>
+      </div>
+      <div class="player-info">
+        <span class="player-name">{{ playerStatus.playerName }}</span>
+      </div>
+    </div>
+  }
+</div>
