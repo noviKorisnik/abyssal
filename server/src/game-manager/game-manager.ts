@@ -31,7 +31,7 @@ export class GameManager {
     // When enabled, game auto-plays first N turns silently (zero turn time, no broadcasts)
     // then switches to normal mode. Useful for testing end-game scenarios.
     // See: server/src/game-manager/SILENT_BROADCAST.md for details
-    private silentBroadcast: boolean = true;       // Enable simulation (set false for normal mode)
+    private silentBroadcast: boolean = false;       // Enable simulation (set false for normal mode)
     private silentBroadcastCount: number = 48;     // Number of turns to simulate (out of 64 max)
 
     // Track all game turns (moves)

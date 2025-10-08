@@ -20,6 +20,10 @@ export class GameActiveComponent {
 
   private playerSetupCells: Set<string> = new Set();
   
+  // Track cells with active explosion animation
+  private explodingCells: Set<string> = new Set();
+  private lastHistoryLength: number = 0;
+  
   // Bound version of getCellClasses for board component
   getCellClassesBound = (x: number, y: number) => this.getCellClasses(x, y);
 
@@ -35,6 +39,27 @@ export class GameActiveComponent {
         }
       }
     }
+
+    // Detect new turn and trigger explosion animation
+    if (this.state?.history) {
+      const currentHistoryLength = this.state.history.length;
+      
+      if (currentHistoryLength > this.lastHistoryLength) {
+        // New turn detected - get the last move
+        const lastMove = this.state.history[currentHistoryLength - 1];
+        if (lastMove?.cell) {
+          const cellKey = `${lastMove.cell.x},${lastMove.cell.y}`;
+          this.explodingCells.add(cellKey);
+          
+          // Remove explosion class after animation completes (1000ms)
+          setTimeout(() => {
+            this.explodingCells.delete(cellKey);
+          }, 1000);
+        }
+      }
+      
+      this.lastHistoryLength = currentHistoryLength;
+    }
   }
 
     // Board and player layers helpers
@@ -48,6 +73,12 @@ export class GameActiveComponent {
 
     getCellClasses(x: number, y: number): string[] {
       const classes = ['cell'];
+      
+      // Check for explosion animation
+      const cellKey = `${x},${y}`;
+      if (this.explodingCells.has(cellKey)) {
+        classes.push('cell-exploding');
+      }
       
       // Check if this cell is part of player's setup
       const hasPlayerSetup = this.playerSetupCells.has(`${y},${x}`);

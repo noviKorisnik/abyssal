@@ -104,6 +104,28 @@ $board-saturation: 80%;
   transition: background 0.2s, border 0.2s;
 }
 
+// === EXPLOSION ANIMATION ===
+.cell-exploding {
+  animation: cell-explode 1s ease-out forwards;
+}
+
+@keyframes cell-explode {
+  0% {
+    background: rgba(255, 255, 255, 0.2);
+  }
+  15% {
+    background: rgba(255, 255, 255, 1);
+    border-color: rgba(255, 255, 255, 1);
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.8),
+                0 0 40px rgba(255, 255, 255, 0.4);
+  }
+  100% {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.25);
+    box-shadow: none;
+  }
+}
+
 .cell > div {
   position: absolute;
   width: 100%;
