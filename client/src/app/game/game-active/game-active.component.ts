@@ -212,7 +212,15 @@ export class GameActiveComponent {
   getCurrentPlayerName(): string {
     if (!this.state?.active?.currentPlayerId) return 'Unknown';
     const player = this.state.players?.find(p => p.userId === this.state?.active?.currentPlayerId);
-    return player?.playerName || player?.userId || 'Unknown';
+    const playerName = player?.playerName || player?.userId || 'Unknown';
+    
+    // If timer is at 0, this is the final board showing the winner
+    const remainingTime = this.state?.active?.remainingTurnTime || 0;
+    if (remainingTime === 0) {
+      return `WINNER: ${playerName}`;
+    }
+    
+    return playerName;
   }
 
   get turnTimeLimitSeconds(): number {

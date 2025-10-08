@@ -41,6 +41,7 @@ export class GameComponent implements OnInit, OnDestroy {
   // Track if we're showing the final board before transitioning to done screen
   showingFinalBoard: boolean = false;
   private finalBoardTimeout: any = null;
+  private actualDoneState: GameStatusMessage | null = null;
 
   constructor(private userService: UserService, private route: ActivatedRoute, private router: Router) {}
 
@@ -91,7 +92,7 @@ export class GameComponent implements OnInit, OnDestroy {
         
         // Handle transition to done phase with delay
         if (data.phase === 'done' && !this.showingFinalBoard && this.state?.phase === 'active') {
-          // Game just ended - update state to show final board, but delay showing rankings
+          // Game just ended - create fake active state to show final board
           console.log('=== GAME OVER ===');
           console.log('Final Rankings:', data.done?.placements?.map((p: any) => {
             const player = data.players.find((pl: any) => pl.userId === p.userId);
@@ -101,13 +102,38 @@ export class GameComponent implements OnInit, OnDestroy {
           }).join(' | '));
           console.log('================');
           
-          this.state = data; // Update state immediately to show final board
+          // Store the actual done state for later
+          this.actualDoneState = data;
+          
+          // Create a fake active state with the winner info
+          const winner = data.done?.placements?.find((p: any) => p.rank === 1);
+          const winnerPlayer = data.players.find((pl: any) => pl.userId === winner?.userId);
+          const winnerName = winnerPlayer?.playerName || winnerPlayer?.userId || 'Winner';
+          
+          // Create fake active state showing final board with winner as "current player"
+          const fakeActiveState = {
+            ...data,
+            phase: 'active', // Pretend we're still in active phase
+            active: {
+              ...data.active,
+              turnTimer: {
+                totalMs: 5000, // 5 second display
+                remainingMs: 0  // But show 0 on the timer
+              },
+              currentPlayerId: winner?.userId || '' // Set winner as current player for color
+            }
+          };
+          
+          this.state = fakeActiveState;
           this.showingFinalBoard = true;
           this.clearFinalBoardTimeout();
+          
+          // After 4 seconds, transition to actual done state
           this.finalBoardTimeout = setTimeout(() => {
             this.showingFinalBoard = false;
-            // State already updated, just stop showing active component
-          }, 3000); // 3 second delay
+            this.state = this.actualDoneState;
+            this.actualDoneState = null;
+          }, 4000); // 4 second delay
           return;
         }
         
