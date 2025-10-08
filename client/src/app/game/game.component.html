@@ -1,7 +1,7 @@
 
 <div class="game-container">
-  <!-- New: GameActiveComponent for active phase -->
-  @if (state?.phase === 'active') {
+  <!-- Show active game during active phase OR when showing final board before done transition -->
+  @if (state?.phase === 'active' || showingFinalBoard) {
     <app-game-active [state]="state" [setup]="room!.player" (pickCell)="onPickCell($event)"></app-game-active>
   }
   <!-- New: GameReadyComponent for ready phase -->
@@ -12,6 +12,15 @@
       (quickStart)="onQuickStart()" 
       (leave)="onLeaveRoom()">
     </app-game-ready>
+  }
+  <!-- Show done component only after final board delay -->
+  @if (state?.phase === 'done' && !showingFinalBoard) {
+    <app-game-done 
+      [state]="state"
+      [currentUserId]="userId"
+      (newGame)="onNewGame()"
+      (home)="onGoHome()">
+    </app-game-done>
   }
 
   

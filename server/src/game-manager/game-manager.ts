@@ -5,6 +5,8 @@ import { AIManager } from '../ai-manager';
 export class GameManager {
     // Track eliminated players
     private eliminatedPlayers: Set<string> = new Set();
+    // Track when each player was eliminated (turn number)
+    private playerEliminationTurn: Map<string, number> = new Map();
     // Track sockets for each game manager (room)
     private sockets: Set<any> = new Set(); // Use 'any' for WebSocket type compatibility
     private static instances: GameManager[] = [];
@@ -252,28 +254,53 @@ export class GameManager {
                 }
             }
         }
-        // Eliminate players whose ships are all sunk
+        
+        // First, mark all players whose ships are sunk (but don't add to eliminated set yet)
+        const playersToEliminate: string[] = [];
         for (const [playerId, layer] of this.playerBoards.entries()) {
             if (this.eliminatedPlayers.has(playerId)) continue;
             if (layer.ships.length > 0 && layer.ships.every(ship => ship.isSunk)) {
-                this.eliminatedPlayers.add(playerId);
-                // Remove from turnOrder
-                this.turnOrder = this.turnOrder.filter(id => id !== playerId);
+                playersToEliminate.push(playerId);
             }
         }
+        
+        // Check if current player wins by eliminating all opponents
+        // (even if their own ships are also sunk in this move)
+        const opponentsToEliminate = playersToEliminate.filter(p => p !== turn.playerId);
+        const currentPlayerWouldBeEliminated = playersToEliminate.includes(turn.playerId);
+        
+        // Count active opponents after this move (excluding current player)
+        const activeOpponents = Array.from(this.playerBoards.keys()).filter(
+            id => id !== turn.playerId && 
+                  !this.eliminatedPlayers.has(id) && 
+                  !opponentsToEliminate.includes(id)
+        );
+        
+        // If current player eliminates all opponents with this move, they win
+        // (even if their own ships also got sunk)
+        if (activeOpponents.length === 0 && currentPlayerWouldBeEliminated) {
+            // Current player made the winning move - don't eliminate them
+            console.log(`Player ${turn.playerId} wins by eliminating all opponents (including self-sacrifice)`);
+            playersToEliminate.splice(playersToEliminate.indexOf(turn.playerId), 1);
+        }
+        
+        // Now actually eliminate the players
+        for (const playerId of playersToEliminate) {
+            this.eliminatedPlayers.add(playerId);
+            // Record the turn number when eliminated
+            this.playerEliminationTurn.set(playerId, this.gameTurns.length);
+            console.log(`Player ${playerId} eliminated at turn ${this.gameTurns.length}`);
+        }
+        
+        // Note: We keep turnOrder unchanged - nextTurn() will skip eliminated players
     }
 
-    // Check for game end: all other players' ships are sunk
+    // Check for game end: only one player remains (or zero if all eliminated simultaneously)
     private isGameDone(): boolean {
-        for (const [playerId, layer] of this.playerBoards.entries()) {
-            if (playerId === this.currentPlayerId) continue;
-            // If any other player has at least one unsunk ship, game is not done
-            if (layer.ships.some(ship => !ship.isSunk)) {
-                return false;
-            }
-        }
-        // All other players' ships are sunk
-        return true;
+        const activePlayers = Array.from(this.playerBoards.keys()).filter(
+            id => !this.eliminatedPlayers.has(id)
+        );
+        return activePlayers.length <= 1;
     }
 
     private removeSocket(socket: any) {
@@ -334,48 +361,45 @@ export class GameManager {
 
     private get doneState() {
         if (this.state !== 'done') return undefined;
-        // Winner is the last active player
+        // Winner is the last active player (or no winner if all eliminated simultaneously)
         const activePlayers = this.players.map(p => p.userId).filter(id => !this.eliminatedPlayers.has(id));
         const winnerId = activePlayers.length === 1 ? activePlayers[0] : "";
 
-        // Track elimination turn for each player
-        const eliminatedAtTurn: Record<string, number> = {};
-        for (let turnIdx = 0; turnIdx < this.gameTurns.length; turnIdx++) {
-            const turn = this.gameTurns[turnIdx];
-            for (const pid of turn.sinks) {
-                if (!(pid in eliminatedAtTurn) && this.eliminatedPlayers.has(pid)) {
-                    eliminatedAtTurn[pid] = turnIdx + 1; // 1-based turn index
-                }
-            }
-        }
-        // Add any eliminated players not in eliminatedAtTurn (edge case)
-        for (const pid of this.eliminatedPlayers) {
-            if (!(pid in eliminatedAtTurn)) {
-                eliminatedAtTurn[pid] = this.gameTurns.length; // eliminated at last turn
-            }
-        }
-        // Winner's turn: one higher than max
-        const winnerTurn = Math.max(0, ...Object.values(eliminatedAtTurn)) + 1;
-
+        // Build rankings using stored elimination turns
         // Group players by elimination turn
         const turnToPlayers: Record<number, string[]> = {};
-        for (const [pid, turn] of Object.entries(eliminatedAtTurn)) {
+        for (const [playerId, turn] of this.playerEliminationTurn.entries()) {
+            // Skip the winner
+            if (playerId === winnerId) continue;
+            
             if (!turnToPlayers[turn]) turnToPlayers[turn] = [];
-            turnToPlayers[turn].push(pid);
+            turnToPlayers[turn].push(playerId);
         }
-        // Build placements: higher turn = better rank, winner gets best
+        
+        console.log('[doneState] Players grouped by elimination turn:', turnToPlayers);
+        
+        // Build placements: later elimination = better rank (survived longer)
+        // Players eliminated on same turn share the same rank
         const allTurns = Object.keys(turnToPlayers).map(Number).sort((a, b) => b - a);
         let currentRank = 2; // winner is always rank 1
         const placements: Array<{ userId: string; rank: number }> = [];
+        
         if (winnerId) {
             placements.push({ userId: winnerId, rank: 1 });
         }
+        
+        // Assign ranks: players eliminated later get better ranks
         for (const turn of allTurns) {
-            for (const pid of turnToPlayers[turn]) {
+            const playersAtThisTurn = turnToPlayers[turn];
+            for (const pid of playersAtThisTurn) {
                 placements.push({ userId: pid, rank: currentRank });
             }
-            currentRank++;
+            // Next rank is current rank + number of players at this turn
+            currentRank += playersAtThisTurn.length;
         }
+        
+        console.log('[doneState] Final placements:', placements);
+        
         return {
             winnerId,
             placements
@@ -457,7 +481,8 @@ export class GameManager {
         return this.players.map(p => ({
             userId: p.userId,
             playerName: p.playerName,
-            connected: Array.from(this.sockets).some(sock => sock.userId === p.userId)
+            connected: Array.from(this.sockets).some(sock => sock.userId === p.userId),
+            eliminatedAtTurn: this.playerEliminationTurn.get(p.userId) // undefined if not eliminated
         }));
     }
 
@@ -613,10 +638,22 @@ export class GameManager {
     }
 
     private nextTurn() {
-        if (this.turnOrder.length === 0) return;
+        if (this.turnOrder.length === 0) {
+            console.warn('No players in turn order');
+            return;
+        }
+        
+        // Advance to next non-eliminated player
+        const startIndex = this.currentTurnIndex;
         do {
             this.currentTurnIndex = (this.currentTurnIndex + 1) % this.turnOrder.length;
-        } while (this.eliminatedPlayers.has(this.turnOrder[this.currentTurnIndex]) && this.turnOrder.length > 1);
+            // Safety check: if we've looped back to start, break to prevent infinite loop
+            if (this.currentTurnIndex === startIndex && this.eliminatedPlayers.has(this.turnOrder[this.currentTurnIndex])) {
+                console.warn('All players eliminated, cannot advance turn');
+                return;
+            }
+        } while (this.eliminatedPlayers.has(this.turnOrder[this.currentTurnIndex]));
+        
         this.startTurnTimer();
         this.broadcast();
     }
@@ -650,6 +687,7 @@ export class GameManager {
         this.playerBoards = new Map();
         // Clear eliminated players
         this.eliminatedPlayers.clear();
+        this.playerEliminationTurn.clear();
         // Reset turn state
         this.turnOrder = [];
         this.currentTurnIndex = 0;

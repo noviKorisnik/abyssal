@@ -1,0 +1,34 @@
+<div class="done-game">
+  <h2>ABYSSAL</h2>
+  
+  <div class="result-banner" [class.victory]="isWinner" [class.defeat]="!isWinner">
+    <div class="result-emoji">{{ isWinner ? '🏆' : '💀' }}</div>
+    <div class="result-title">{{ isWinner ? 'Victory!' : 'Defeated' }}</div>
+    <div class="result-subtitle">
+      @if (isWinner) {
+        You are the last ship standing!
+      } @else {
+        You finished {{ currentPlayerRank }}{{ getRankSuffix(currentPlayerRank) }}
+      }
+    </div>
+  </div>
+
+  <div class="rankings">
+    <ul class="rankings-list">
+      @for (placement of sortedPlacements; track placement.userId) {
+        <li [class.is-current-user]="placement.isCurrentUser">
+          <span class="rank-badge">
+            <span class="rank-emoji">{{ getRankEmoji(placement.rank) }}</span>
+            <span class="rank-number">{{ placement.rank }}{{ getRankSuffix(placement.rank) }}</span>
+          </span>
+          <span class="player-name">{{ placement.playerName }}</span>
+        </li>
+      }
+    </ul>
+  </div>
+
+  <div class="button-container">
+    <button (click)="home.emit()" class="secondary-btn">Home</button>
+    <button (click)="newGame.emit()" class="primary-btn">New Game</button>
+  </div>
+</div>

@@ -9,11 +9,12 @@ import { GameRoom, GameStatusMessage } from './game.model';
 import { CommonModule } from '@angular/common';
 import { GameReadyComponent } from './game-ready/game-ready.component';
 import { GameActiveComponent } from './game-active/game-active.component';
+import { GameDoneComponent } from './game-done/game-done.component';
 
 @Component({
   selector: 'app-game',
   templateUrl: './game.component.html',
-  imports: [CommonModule, GameReadyComponent, GameActiveComponent],
+  imports: [CommonModule, GameReadyComponent, GameActiveComponent, GameDoneComponent],
   styleUrls: ['./game.component.scss'],
   // imports: [CommonModule]
 })
@@ -36,6 +37,10 @@ export class GameComponent implements OnInit, OnDestroy {
   countdown: number = 0;
   private countdownInterval: any = null;
   private userIdSub: Subscription | null = null;
+  
+  // Track if we're showing the final board before transitioning to done screen
+  showingFinalBoard: boolean = false;
+  private finalBoardTimeout: any = null;
 
   constructor(private userService: UserService, private route: ActivatedRoute, private router: Router) {}
 
@@ -75,12 +80,37 @@ export class GameComponent implements OnInit, OnDestroy {
       this.userIdSub.unsubscribe();
     }
     this.clearCountdownInterval();
+    this.clearFinalBoardTimeout();
   }
 
   handleSocketMessage(data: any) {
     switch (data.type) {
       case 'state':
-        // console.log('[Socket] Game state data:', data);
+        // Log turn details for debugging
+        this.logTurnDetails(data);
+        
+        // Handle transition to done phase with delay
+        if (data.phase === 'done' && !this.showingFinalBoard && this.state?.phase === 'active') {
+          // Game just ended - update state to show final board, but delay showing rankings
+          console.log('=== GAME OVER ===');
+          console.log('Final Rankings:', data.done?.placements?.map((p: any) => {
+            const player = data.players.find((pl: any) => pl.userId === p.userId);
+            const name = player?.playerName || player?.userId || p.userId;
+            const elimTurn = player?.eliminatedAtTurn ? ` (eliminated turn ${player.eliminatedAtTurn})` : ' (winner)';
+            return `${p.rank}. ${name}${elimTurn}`;
+          }).join(' | '));
+          console.log('================');
+          
+          this.state = data; // Update state immediately to show final board
+          this.showingFinalBoard = true;
+          this.clearFinalBoardTimeout();
+          this.finalBoardTimeout = setTimeout(() => {
+            this.showingFinalBoard = false;
+            // State already updated, just stop showing active component
+          }, 3000); // 3 second delay
+          return;
+        }
+        
         this.state = data;
         // If in lobby and ready state, start or update countdown
         if (data.phase === 'ready' && data.ready) {
@@ -89,7 +119,13 @@ export class GameComponent implements OnInit, OnDestroy {
           this.clearCountdownInterval();
         }
         // Redirect to root if state is empty (after leave room)
-        if (data.phase === 'done' || (data.players && data.players.length === 0)) {
+        // But do NOT redirect on done phase - let user view results
+        if (data.phase === 'done') {
+          // Server may reset game, but client stays on done screen
+          // User manually navigates via buttons
+          return;
+        }
+        if (data.players && data.players.length === 0) {
           this.router.navigate(['/']);
         }
         break;
@@ -134,6 +170,81 @@ export class GameComponent implements OnInit, OnDestroy {
     }
   }
 
+  clearFinalBoardTimeout() {
+    if (this.finalBoardTimeout) {
+      clearTimeout(this.finalBoardTimeout);
+      this.finalBoardTimeout = null;
+    }
+  }
+
+  logTurnDetails(data: any) {
+    // Only log for active or done phases with history
+    if (!data.history || data.history.length === 0) return;
+    
+    // Check if this is a new turn (history length changed)
+    const currentHistoryLength = this.state?.history?.length || 0;
+    if (data.history.length <= currentHistoryLength) return;
+    
+    // Get the latest turn
+    const latestTurn = data.history[data.history.length - 1];
+    const turnNo = data.history.length;
+    
+    // Find player name
+    const player = data.players.find((p: any) => p.userId === latestTurn.playerId);
+    const playerName = player?.playerName || player?.userId || 'Unknown';
+    
+    // Format hits
+    const hits = latestTurn.hits.map((pid: string) => {
+      const p = data.players.find((pl: any) => pl.userId === pid);
+      return p?.playerName || p?.userId || pid;
+    });
+    
+    // Format sinks with ship info
+    const sinks = latestTurn.sinks.map((pid: string) => {
+      const p = data.players.find((pl: any) => pl.userId === pid);
+      const playerLabel = p?.playerName || p?.userId || pid;
+      
+      // Find the sunk ship cells for this player
+      const layer = data.boardLayout?.playerLayers.find((l: any) => l.playerId === pid);
+      if (layer && layer.sunkShips) {
+        const sunkShip = layer.sunkShips.find((ship: any) => 
+          ship.cells.some((c: any) => c.x === latestTurn.cell.x && c.y === latestTurn.cell.y)
+        );
+        if (sunkShip) {
+          const cellsStr = sunkShip.cells.map((c: any) => `(${c.x},${c.y})`).join(', ');
+          return `${playerLabel} [${cellsStr}]`;
+        }
+      }
+      return playerLabel;
+    });
+    
+    // Find eliminated players (newly eliminated in this turn)
+    const eliminated = data.players
+      .filter((p: any) => p.eliminatedAtTurn === turnNo)
+      .map((p: any) => p.playerName || p.userId);
+    
+    // Build log message
+    const parts = [
+      `Turn #${turnNo}`,
+      `Player: ${playerName}`,
+      `Picked: (${latestTurn.cell.x},${latestTurn.cell.y})`
+    ];
+    
+    if (hits.length > 0) {
+      parts.push(`Hits: [${hits.join(', ')}]`);
+    }
+    
+    if (sinks.length > 0) {
+      parts.push(`Sunk: [${sinks.join(', ')}]`);
+    }
+    
+    if (eliminated.length > 0) {
+      parts.push(`Eliminated: [${eliminated.join(', ')}]`);
+    }
+    
+    console.log(parts.join(' | '));
+  }
+
   onQuickStart() {
     if (this.socket && this.state?.ready?.quickStartEnabled) {
       this.socket.send({ type: 'quickStart', gameId: this.gameId, userId: this.userId });
@@ -144,5 +255,13 @@ export class GameComponent implements OnInit, OnDestroy {
     if (this.socket) {
       this.socket.send({ type: 'exit', gameId: this.gameId, userId: this.userId });
     }
+  }
+
+  onNewGame() {
+    this.router.navigate(['/game-setup']);
+  }
+
+  onGoHome() {
+    this.router.navigate(['/']);
   }
 }

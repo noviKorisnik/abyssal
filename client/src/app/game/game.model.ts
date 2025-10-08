@@ -24,7 +24,12 @@ export interface BoardLayout {
 export interface GameStatusMessage {
   phase: GameState;
   gameId: string;
-  players: Array<{ userId: string; playerName?: string; connected: boolean }>;
+  players: Array<{ 
+    userId: string; 
+    playerName?: string; 
+    connected: boolean;
+    eliminatedAtTurn?: number; // Turn number when eliminated (undefined if still active)
+  }>;
   ready?: {
     waitTime: number;
     countdownTimer: number;

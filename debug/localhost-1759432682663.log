@@ -1,0 +1,59 @@
+game.component.ts:245 Turn #1 | Player: Thunder Eagle | Picked: (6,1)
+game.component.ts:245 Turn #2 | Player: Mild Morning | Picked: (4,3)
+game.component.ts:245 Turn #3 | Player: Minor Onyx | Picked: (3,0) | Sunk: [Mild Morning [(3,0)]]
+game.component.ts:245 Turn #4 | Player: Shadow Wolf | Picked: (6,0) | Hits: [Minor Onyx] | Sunk: [Mild Morning [(6,0)]]
+game.component.ts:245 Turn #5 | Player: Thunder Eagle | Picked: (6,2) | Sunk: [Minor Onyx [(6,2)]]
+game.component.ts:245 Turn #6 | Player: Mild Morning | Picked: (0,0) | Hits: [Minor Onyx, Shadow Wolf]
+game.component.ts:245 Turn #7 | Player: Minor Onyx | Picked: (0,1) | Hits: [Shadow Wolf]
+game.component.ts:245 Turn #8 | Player: Shadow Wolf | Picked: (1,0) | Sunk: [Minor Onyx [(0,0), (1,0)]]
+game.component.ts:245 Turn #9 | Player: Thunder Eagle | Picked: (7,6) | Hits: [Minor Onyx]
+game.component.ts:245 Turn #10 | Player: Mild Morning | Picked: (1,5)
+game.component.ts:245 Turn #11 | Player: Minor Onyx | Picked: (3,7) | Hits: [Shadow Wolf]
+game.component.ts:245 Turn #12 | Player: Shadow Wolf | Picked: (1,1) | Sunk: [Thunder Eagle [(1,1)]]
+game.component.ts:245 Turn #13 | Player: Thunder Eagle | Picked: (0,2) | Hits: [Mild Morning, Minor Onyx] | Sunk: [Shadow Wolf [(0,0), (0,1), (0,2)]]
+game.component.ts:245 Turn #14 | Player: Mild Morning | Picked: (6,7) | Hits: [Shadow Wolf, Thunder Eagle]
+game.component.ts:245 Turn #15 | Player: Minor Onyx | Picked: (1,4) | Hits: [Shadow Wolf]
+game.component.ts:245 Turn #16 | Player: Shadow Wolf | Picked: (7,7) | Hits: [Minor Onyx] | Sunk: [Mild Morning [(7,7)], Thunder Eagle [(6,7), (7,7)]]
+game.component.ts:245 Turn #17 | Player: Thunder Eagle | Picked: (2,5)
+game.component.ts:245 Turn #18 | Player: Mild Morning | Picked: (7,0) | Hits: [Minor Onyx, Thunder Eagle]
+game.component.ts:245 Turn #19 | Player: Minor Onyx | Picked: (3,3) | Hits: [Mild Morning]
+game.component.ts:245 Turn #20 | Player: Shadow Wolf | Picked: (5,5) | Hits: [Mild Morning, Minor Onyx]
+game.component.ts:245 Turn #21 | Player: Thunder Eagle | Picked: (7,4) | Hits: [Mild Morning, Shadow Wolf]
+game.component.ts:245 Turn #22 | Player: Mild Morning | Picked: (5,1) | Hits: [Thunder Eagle] | Sunk: [Shadow Wolf [(5,1)]]
+game.component.ts:245 Turn #23 | Player: Minor Onyx | Picked: (2,7) | Hits: [Thunder Eagle]
+game.component.ts:245 Turn #24 | Player: Shadow Wolf | Picked: (1,7) | Hits: [Thunder Eagle]
+game.component.ts:245 Turn #25 | Player: Thunder Eagle | Picked: (2,1)
+game.component.ts:245 Turn #26 | Player: Mild Morning | Picked: (3,1) | Hits: [Minor Onyx]
+game.component.ts:245 Turn #27 | Player: Minor Onyx | Picked: (4,1) | Sunk: [Thunder Eagle [(4,1), (5,1)]]
+game.component.ts:245 Turn #28 | Player: Shadow Wolf | Picked: (1,2)
+game.component.ts:245 Turn #29 | Player: Thunder Eagle | Picked: (5,3) | Hits: [Shadow Wolf] | Sunk: [Mild Morning [(5,3)]]
+game.component.ts:245 Turn #30 | Player: Mild Morning | Picked: (5,4) | Hits: [Minor Onyx] | Sunk: [Shadow Wolf [(5,3), (5,4)]]
+game.component.ts:245 Turn #31 | Player: Minor Onyx | Picked: (0,7) | Hits: [Mild Morning] | Sunk: [Thunder Eagle [(0,7), (1,7), (2,7)]]
+game.component.ts:245 Turn #32 | Player: Shadow Wolf | Picked: (0,5) | Hits: [Thunder Eagle]
+game.component.ts:245 Turn #33 | Player: Thunder Eagle | Picked: (3,4) | Hits: [Shadow Wolf] | Sunk: [Minor Onyx [(3,4)]]
+game.component.ts:245 Turn #34 | Player: Mild Morning | Picked: (7,1) | Hits: [Shadow Wolf, Thunder Eagle]
+game.component.ts:245 Turn #35 | Player: Minor Onyx | Picked: (7,2) | Hits: [Mild Morning, Shadow Wolf, Thunder Eagle]
+game.component.ts:245 Turn #36 | Player: Shadow Wolf | Picked: (0,3) | Hits: [Mild Morning, Thunder Eagle] | Sunk: [Minor Onyx [(0,2), (0,3)]]
+game.component.ts:245 Turn #37 | Player: Thunder Eagle | Picked: (3,2) | Sunk: [Mild Morning [(3,2), (3,3)], Minor Onyx [(3,1), (3,2)], Shadow Wolf [(3,2)]]
+game.component.ts:245 Turn #38 | Player: Mild Morning | Picked: (7,3) | Hits: [Mild Morning] | Sunk: [Shadow Wolf [(7,1), (7,2), (7,3), (7,4)], Thunder Eagle [(7,0), (7,1), (7,2), (7,3)]]
+game.component.ts:245 Turn #39 | Player: Minor Onyx | Picked: (2,4) | Sunk: [Shadow Wolf [(1,4), (2,4), (3,4)], Thunder Eagle [(2,4)]]
+game.component.ts:245 Turn #40 | Player: Shadow Wolf | Picked: (4,4) | Sunk: [Thunder Eagle [(4,4)]]
+game.component.ts:245 Turn #41 | Player: Thunder Eagle | Picked: (2,0) | Sunk: [Shadow Wolf [(2,0)]]
+game.component.ts:245 Turn #42 | Player: Mild Morning | Picked: (6,5) | Hits: [Thunder Eagle]
+game.component.ts:245 Turn #43 | Player: Minor Onyx | Picked: (0,6) | Sunk: [Mild Morning [(0,6), (0,7)]]
+game.component.ts:245 Turn #44 | Player: Shadow Wolf | Picked: (2,6) | Hits: [Mild Morning]
+game.component.ts:245 Turn #45 | Player: Thunder Eagle | Picked: (5,2)
+game.component.ts:245 Turn #46 | Player: Mild Morning | Picked: (3,6) | Sunk: [Mild Morning [(2,6), (3,6)], Minor Onyx [(3,6)], Shadow Wolf [(3,6), (3,7)]]
+game.component.ts:245 Turn #47 | Player: Minor Onyx | Picked: (0,4) | Sunk: [Mild Morning [(0,2), (0,3), (0,4)], Thunder Eagle [(0,3), (0,4), (0,5)]]
+game.component.ts:245 Turn #48 | Player: Shadow Wolf | Picked: (5,6) | Hits: [Mild Morning, Minor Onyx]
+game.component.ts:245 Turn #49 | Player: Thunder Eagle | Picked: (5,7) | Sunk: [Mild Morning [(5,5), (5,6), (5,7)], Minor Onyx [(5,4), (5,5), (5,6), (5,7)], Shadow Wolf [(5,7), (6,7)]]
+game.component.ts:245 Turn #50 | Player: Mild Morning | Picked: (1,6) | Sunk: [Minor Onyx [(1,6)], Shadow Wolf [(1,6)]] | Eliminated: [Shadow Wolf]
+game.component.ts:245 Turn #51 | Player: Minor Onyx | Picked: (4,7) | Sunk: [Thunder Eagle [(4,7)]]
+game.component.ts:245 Turn #52 | Player: Thunder Eagle | Picked: (6,4)
+game.component.ts:245 Turn #53 | Player: Mild Morning | Picked: (5,0) | Sunk: [Minor Onyx [(5,0), (6,0), (7,0)]]
+game.component.ts:245 Turn #54 | Player: Minor Onyx | Picked: (2,3)
+game.component.ts:245 Turn #55 | Player: Thunder Eagle | Picked: (4,6)
+game.component.ts:245 Turn #56 | Player: Mild Morning | Picked: (7,5) | Sunk: [Mild Morning [(7,2), (7,3), (7,4), (7,5)], Minor Onyx [(7,5), (7,6), (7,7)], Thunder Eagle [(6,5), (7,5)]] | Eliminated: [Mild Morning, Minor Onyx, Thunder Eagle]
+game.component.ts:95 === GAME OVER ===
+game.component.ts:96 Final Rankings: 2. Mild Morning (eliminated turn 56) | 2. Minor Onyx (eliminated turn 56) | 2. Thunder Eagle (eliminated turn 56) | 5. Shadow Wolf (eliminated turn 50)
+game.component.ts:102 ================

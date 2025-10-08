@@ -140,9 +140,10 @@ $board-saturation: 80%;
   z-index: 2;
 }
 
-.cell-player-disc-sunk {
-  box-shadow: 0 0 0 1px #fff;
-}
+// Removed white border from sunk markers - no longer needed
+// .cell-player-disc-sunk {
+//   box-shadow: 0 0 0 1px #fff;
+// }
 
 // Player 0 (top-left) and 1 (top-right) on parent div
 .cell-player-0-hit::before, .cell-player-0-sunk::before {
@@ -154,7 +155,6 @@ $board-saturation: 80%;
 }
 
 .cell-player-0-sunk::before {
-  @extend .cell-player-disc-sunk;
   background: map.get($player-colors, 0);
 }
 
@@ -167,12 +167,12 @@ $board-saturation: 80%;
 }
 
 .cell-player-1-sunk::after {
-  @extend .cell-player-disc-sunk;
   background: map.get($player-colors, 1);
 }
 
 // Player 2 (bottom-left) and 3 (bottom-right) on child div
-.cell-player-2-hit div::before, .cell-player-2-sunk div::before {
+// Use first child div to avoid conflict with setup discs on second child
+.cell-player-2-hit div:nth-child(1)::before, .cell-player-2-sunk div:nth-child(1)::before {
   @extend .cell-player-disc;
   bottom: $corner-offset; 
   left: $corner-offset;
@@ -180,12 +180,11 @@ $board-saturation: 80%;
   background: transparent;
 }
 
-.cell-player-2-sunk div::before {
-  @extend .cell-player-disc-sunk;
+.cell-player-2-sunk div:nth-child(1)::before {
   background: map.get($player-colors, 2);
 }
 
-.cell-player-3-hit div::after, .cell-player-3-sunk div::after {
+.cell-player-3-hit div:nth-child(1)::after, .cell-player-3-sunk div:nth-child(1)::after {
   @extend .cell-player-disc;
   bottom: $corner-offset; 
   right: $corner-offset;
@@ -193,8 +192,7 @@ $board-saturation: 80%;
   background: transparent;
 }
 
-.cell-player-3-sunk div::after {
-  @extend .cell-player-disc-sunk;
+.cell-player-3-sunk div:nth-child(1)::after {
   background: map.get($player-colors, 3);
 }
 
@@ -209,6 +207,8 @@ $board-saturation: 80%;
   left: 50%;
   transform: translate(-50%, -50%);
   z-index: 1;
+  border: none; // Ensure no border interference
+  box-shadow: none; // Ensure no box-shadow interference
 }
 
 // Generate setup styles for all players
