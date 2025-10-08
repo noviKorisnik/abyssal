@@ -62,6 +62,33 @@ Please follow these rules when contributing or developing new features:
 
 Instructions for running server and client locally will be added here.
 
+### Development Tools
+
+#### Silent Broadcast Simulation
+
+The **GameManager** includes a built-in silent broadcast feature for rapid end-game testing. When enabled, the game auto-plays a configurable number of turns silently (with zero delay) before clients receive any broadcasts.
+
+**Quick usage:**
+```typescript
+// In server/src/game-manager/game-manager.ts
+private silentBroadcast: boolean = true;  // Enable simulation
+private silentBroadcastCount: number = 48; // Simulate first 48 turns
+```
+
+**What happens:**
+1. Game starts normally when players join
+2. First 48 turns auto-play instantly (zero turn time)
+3. No broadcasts sent during simulation
+4. At turn 48, broadcasts begin with full game history
+5. Clients see game in near-end state ready to play
+
+**For normal production mode:**
+```typescript
+private silentBroadcast: boolean = false; // Disable simulation
+```
+
+For detailed configuration and use cases, see [Silent Broadcast Documentation](./server/src/game-manager/SILENT_BROADCAST.md).
+
 ---
 
 ## License

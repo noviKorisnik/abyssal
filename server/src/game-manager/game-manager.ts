@@ -27,6 +27,13 @@ export class GameManager {
     private turnTimeout: NodeJS.Timeout | null = null;
     private turnSyncInterval: NodeJS.Timeout | null = null;
 
+    // --- Silent Broadcast Simulation ---
+    // When enabled, game auto-plays first N turns silently (zero turn time, no broadcasts)
+    // then switches to normal mode. Useful for testing end-game scenarios.
+    // See: server/src/game-manager/SILENT_BROADCAST.md for details
+    private silentBroadcast: boolean = true;       // Enable simulation (set false for normal mode)
+    private silentBroadcastCount: number = 48;     // Number of turns to simulate (out of 64 max)
+
     // Track all game turns (moves)
     private gameTurns: GameTurn[] = [];
 
@@ -184,9 +191,9 @@ export class GameManager {
         }
         // Already picked check
         // return this.gameTurns.every(turn => turn.cell.x !== cell.x || turn.cell.y !== cell.y);
-        
-    // Already picked check using baseBoard
-    return !this.baseBoard.has(`${cell.x},${cell.y}`);
+
+        // Already picked check using baseBoard
+        return !this.baseBoard.has(`${cell.x},${cell.y}`);
 
     }
 
@@ -254,7 +261,7 @@ export class GameManager {
                 }
             }
         }
-        
+
         // First, mark all players whose ships are sunk (but don't add to eliminated set yet)
         const playersToEliminate: string[] = [];
         for (const [playerId, layer] of this.playerBoards.entries()) {
@@ -263,19 +270,19 @@ export class GameManager {
                 playersToEliminate.push(playerId);
             }
         }
-        
+
         // Check if current player wins by eliminating all opponents
         // (even if their own ships are also sunk in this move)
         const opponentsToEliminate = playersToEliminate.filter(p => p !== turn.playerId);
         const currentPlayerWouldBeEliminated = playersToEliminate.includes(turn.playerId);
-        
+
         // Count active opponents after this move (excluding current player)
         const activeOpponents = Array.from(this.playerBoards.keys()).filter(
-            id => id !== turn.playerId && 
-                  !this.eliminatedPlayers.has(id) && 
-                  !opponentsToEliminate.includes(id)
+            id => id !== turn.playerId &&
+                !this.eliminatedPlayers.has(id) &&
+                !opponentsToEliminate.includes(id)
         );
-        
+
         // If current player eliminates all opponents with this move, they win
         // (even if their own ships also got sunk)
         if (activeOpponents.length === 0 && currentPlayerWouldBeEliminated) {
@@ -283,7 +290,7 @@ export class GameManager {
             console.log(`Player ${turn.playerId} wins by eliminating all opponents (including self-sacrifice)`);
             playersToEliminate.splice(playersToEliminate.indexOf(turn.playerId), 1);
         }
-        
+
         // Now actually eliminate the players
         for (const playerId of playersToEliminate) {
             this.eliminatedPlayers.add(playerId);
@@ -291,7 +298,7 @@ export class GameManager {
             this.playerEliminationTurn.set(playerId, this.gameTurns.length);
             console.log(`Player ${playerId} eliminated at turn ${this.gameTurns.length}`);
         }
-        
+
         // Note: We keep turnOrder unchanged - nextTurn() will skip eliminated players
     }
 
@@ -321,7 +328,7 @@ export class GameManager {
             if (sock.userId === userId) {
                 try {
                     sock.send(JSON.stringify({ type: 'kicked', reason: 'left' }));
-                } catch {}
+                } catch { }
                 this.sockets.delete(sock);
             }
         }
@@ -333,21 +340,30 @@ export class GameManager {
     }
 
     private broadcast() {
-        const message: GameStatusMessage = {
-            type: 'state',
-            phase: this.state,
-            gameId: this.id,
-            players: this.playerList(),
-            ready: this.readyState,
-            active: this.activeState,
-            done: this.doneState,
-            history: this.historyState,
-            boardLayout: this.boardLayoutState,
-        };
-        const msg = JSON.stringify(message);
-        for (const sock of this.sockets) {
-            try { sock.send(msg); } catch (err) { /* handle error */ }
+        if (this.isFullBroadcast()) {
+            const message: GameStatusMessage = {
+                type: 'state',
+                phase: this.state,
+                gameId: this.id,
+                players: this.playerList(),
+                ready: this.readyState,
+                active: this.activeState,
+                done: this.doneState,
+                history: this.historyState,
+                boardLayout: this.boardLayoutState,
+            };
+            const msg = JSON.stringify(message);
+            for (const sock of this.sockets) {
+                try { sock.send(msg); } catch (err) { /* handle error */ }
+            }
         }
+    }
+
+    private isFullBroadcast() {
+        if (!this.silentBroadcast) return true;
+        if (this.state !== 'active') return true;
+        if (this.historyState && this.historyState.length >= this.silentBroadcastCount) this.silentBroadcast = false;
+        return !this.silentBroadcast;
     }
 
     private get activeState() {
@@ -371,23 +387,23 @@ export class GameManager {
         for (const [playerId, turn] of this.playerEliminationTurn.entries()) {
             // Skip the winner
             if (playerId === winnerId) continue;
-            
+
             if (!turnToPlayers[turn]) turnToPlayers[turn] = [];
             turnToPlayers[turn].push(playerId);
         }
-        
+
         console.log('[doneState] Players grouped by elimination turn:', turnToPlayers);
-        
+
         // Build placements: later elimination = better rank (survived longer)
         // Players eliminated on same turn share the same rank
         const allTurns = Object.keys(turnToPlayers).map(Number).sort((a, b) => b - a);
         let currentRank = 2; // winner is always rank 1
         const placements: Array<{ userId: string; rank: number }> = [];
-        
+
         if (winnerId) {
             placements.push({ userId: winnerId, rank: 1 });
         }
-        
+
         // Assign ranks: players eliminated later get better ranks
         for (const turn of allTurns) {
             const playersAtThisTurn = turnToPlayers[turn];
@@ -397,9 +413,9 @@ export class GameManager {
             // Next rank is current rank + number of players at this turn
             currentRank += playersAtThisTurn.length;
         }
-        
+
         console.log('[doneState] Final placements:', placements);
-        
+
         return {
             winnerId,
             placements
@@ -572,10 +588,10 @@ export class GameManager {
         if (this.turnTimeout) {
             clearTimeout(this.turnTimeout);
         }
-        if (this.turnSyncInterval) {
-            clearInterval(this.turnSyncInterval);
-        }
-        
+        // if (this.turnSyncInterval) {
+        //     clearInterval(this.turnSyncInterval);
+        // }
+
         this.turnTimeout = setTimeout(() => {
             // If time runs out, auto-pick a cell for current player
             this.handleTurnTimeout();
@@ -583,13 +599,13 @@ export class GameManager {
 
         // Broadcast timer updates every 3 seconds to keep clients synchronized
         // (reduced frequency since client now has smooth 25ms animation)
-        this.turnSyncInterval = setInterval(() => {
-            if (this.state === 'active' && this.turnStartTimestamp) {
-                this.broadcast();
-            } else {
-                this.clearTurnSyncInterval();
-            }
-        }, 3000);
+        // this.turnSyncInterval = setInterval(() => {
+        //     if (this.state === 'active' && this.turnStartTimestamp) {
+        //         this.broadcast();
+        //     } else {
+        //         this.clearTurnSyncInterval();
+        //     }
+        // }, 3000);
     }
 
     private clearTurnSyncInterval() {
@@ -600,7 +616,7 @@ export class GameManager {
     }
 
     private get turnTimeLimit() {
-    return (this.config.turnSeconds ?? 30) * 1000;
+        return this.silentBroadcast ? 0 : (this.config.turnSeconds ?? 30) * 1000;
     }
 
     private get remainingTurnTime() {
@@ -642,7 +658,7 @@ export class GameManager {
             console.warn('No players in turn order');
             return;
         }
-        
+
         // Advance to next non-eliminated player
         const startIndex = this.currentTurnIndex;
         do {
@@ -653,7 +669,7 @@ export class GameManager {
                 return;
             }
         } while (this.eliminatedPlayers.has(this.turnOrder[this.currentTurnIndex]));
-        
+
         this.startTurnTimer();
         this.broadcast();
     }
