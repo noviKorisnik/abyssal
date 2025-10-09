@@ -2,9 +2,10 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { GameSocket } from './game.socket';
 import { UserService } from '../user';
-import { ActivatedRoute, Router } from '@angular/router';
+import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { GameRoom, GameStatusMessage } from './game.model';
+import { GameStateService } from '../services/game-state.service';
 
 import { CommonModule } from '@angular/common';
 import { GameReadyComponent } from './game-ready/game-ready.component';
@@ -43,11 +44,22 @@ export class GameComponent implements OnInit, OnDestroy {
   private finalBoardTimeout: any = null;
   private actualDoneState: GameStatusMessage | null = null;
 
-  constructor(private userService: UserService, private route: ActivatedRoute, private router: Router) {}
+  constructor(
+    private userService: UserService,
+    private gameStateService: GameStateService,
+    private router: Router
+  ) {}
 
   ngOnInit() {
-    // Get gameId from route param
-    this.gameId = this.route.snapshot.paramMap.get('gameId') || 'demo-game-id';
+    // Get gameId from storage
+    this.gameId = this.gameStateService.getGameId() || '';
+    
+    if (!this.gameId) {
+      // No active game, redirect to home
+      console.warn('[Game] No active game found, redirecting to home');
+      this.router.navigate(['/']);
+      return;
+    }
     // Subscribe to userId observable
     this.userIdSub = this.userService.getUserId$().subscribe(userId => {
       this.userId = userId;
@@ -281,13 +293,19 @@ export class GameComponent implements OnInit, OnDestroy {
     if (this.socket) {
       this.socket.send({ type: 'exit', gameId: this.gameId, userId: this.userId });
     }
+    // Clear game ID from storage
+    this.gameStateService.clearGameId();
   }
 
   onNewGame() {
+    // Clear current game ID
+    this.gameStateService.clearGameId();
     this.router.navigate(['/game-setup']);
   }
 
   onGoHome() {
+    // Clear game ID from storage
+    this.gameStateService.clearGameId();
     this.router.navigate(['/']);
   }
 }

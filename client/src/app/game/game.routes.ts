@@ -3,7 +3,7 @@ import { GameComponent } from './game.component';
 
 export const gameRoutes: Routes = [
   {
-    path: ':gameId',
+    path: '',
     component: GameComponent,
   },
 ];

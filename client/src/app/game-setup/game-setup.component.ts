@@ -7,6 +7,7 @@ import { BoardCell, GameSetup } from './game-setup.model';
 import { generateGameSetup } from './game-setup.util';
 import { GameSetupService } from './game-setup.service';
 import { PlayerNameService } from '../services/player-name.service';
+import { GameStateService } from '../services/game-state.service';
 
 @Component({
     selector: 'app-game-setup',
@@ -30,6 +31,7 @@ export class GameSetupComponent implements OnInit {
         private route: ActivatedRoute,
         private gameSetupService: GameSetupService,
         private playerNameService: PlayerNameService,
+        private gameStateService: GameStateService,
         private router: Router
     ) {
         this.gameConfig = this.route.snapshot.data['gameConfig'];
@@ -100,13 +102,15 @@ export class GameSetupComponent implements OnInit {
     confirmReady() {
         if (!this.gameSetup || !this.playerName) return;
         
-        // Save player name to session storage
+        // Save player name to storage
         this.playerNameService.savePlayerName(this.playerName);
         
         this.gameSetupService.sendReady(this.gameSetup, this.playerName).subscribe({
             next: ({ gameId }) => {
-                // Redirect to game/lobby screen (adjust route as needed)
-                this.router.navigate(['/game', gameId]);
+                // Store gameId in storage instead of URL
+                this.gameStateService.setGameId(gameId);
+                // Navigate to game screen (no gameId in URL)
+                this.router.navigate(['/game']);
             },
             error: err => {
                 // Handle error (show message, etc.)

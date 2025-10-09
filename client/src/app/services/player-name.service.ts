@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
+import { StorageService } from './storage.service';
 
 const PLAYER_NAME_KEY = 'abyssal_player_name';
 
@@ -11,27 +12,30 @@ const PLAYER_NAME_KEY = 'abyssal_player_name';
 export class PlayerNameService {
   private apiUrl = '/api/names'; // Use relative URL for proxy
 
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private storage: StorageService
+  ) {}
 
   /**
-   * Get player name from session storage
+   * Get player name from storage
    */
   getStoredPlayerName(): string | null {
-    return sessionStorage.getItem(PLAYER_NAME_KEY);
+    return this.storage.getItem(PLAYER_NAME_KEY);
   }
 
   /**
-   * Save player name to session storage
+   * Save player name to storage
    */
   savePlayerName(name: string): void {
-    sessionStorage.setItem(PLAYER_NAME_KEY, name);
+    this.storage.setItem(PLAYER_NAME_KEY, name);
   }
 
   /**
    * Clear stored player name
    */
   clearPlayerName(): void {
-    sessionStorage.removeItem(PLAYER_NAME_KEY);
+    this.storage.removeItem(PLAYER_NAME_KEY);
   }
 
   /**
