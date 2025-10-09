@@ -15,8 +15,7 @@
   
   @if (state?.ready && countdownSeconds > 0) {
     <app-timer-bar 
-      [totalTime]="totalWaitTimeSeconds"
-      [remainingTime]="countdownSeconds"
+      [timerState]="timerState"
       color="#3399ff"
       label="Starting">
     </app-timer-bar>

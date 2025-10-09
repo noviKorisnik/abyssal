@@ -7,8 +7,7 @@
     </app-player-status>
     
     <app-timer-bar 
-      [totalTime]="turnTimeLimitSeconds"
-      [remainingTime]="remainingTurnTimeSeconds"
+      [timerState]="timerState"
       [color]="currentPlayerColor"
       [label]="getCurrentPlayerName()"
       [isUserTurn]="isPlayerTurn">

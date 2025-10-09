@@ -341,13 +341,16 @@ export class GameManager {
 
     private broadcast() {
         if (this.isFullBroadcast()) {
+            const active = this.activeState; // Force evaluation for logging
+            // console.log('[broadcast] Active state:', active);
+
             const message: GameStatusMessage = {
                 type: 'state',
                 phase: this.state,
                 gameId: this.id,
                 players: this.playerList(),
                 ready: this.readyState,
-                active: this.activeState,
+                active,
                 done: this.doneState,
                 history: this.historyState,
                 boardLayout: this.boardLayoutState,
@@ -588,6 +591,8 @@ export class GameManager {
         if (this.turnTimeout) {
             clearTimeout(this.turnTimeout);
         }
+        // Sync interval not needed - client handles smooth countdown animation
+        // Server broadcasts on every turn start with accurate remainingTurnTime
         // if (this.turnSyncInterval) {
         //     clearInterval(this.turnSyncInterval);
         // }
@@ -597,8 +602,7 @@ export class GameManager {
             this.handleTurnTimeout();
         }, this.turnTimeLimit);
 
-        // Broadcast timer updates every 3 seconds to keep clients synchronized
-        // (reduced frequency since client now has smooth 25ms animation)
+        // No need for sync broadcasts - client animates smoothly between turn changes
         // this.turnSyncInterval = setInterval(() => {
         //     if (this.state === 'active' && this.turnStartTimestamp) {
         //         this.broadcast();

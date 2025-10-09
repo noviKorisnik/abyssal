@@ -24,6 +24,9 @@ export class GameActiveComponent {
   private explodingCells: Set<string> = new Set();
   private lastHistoryLength: number = 0;
   
+  // Timer state - updated only when state changes to force change detection
+  timerState: { total: number; remaining: number } = { total: 0, remaining: 0 };
+  
   // Bound version of getCellClasses for board component
   getCellClassesBound = (x: number, y: number) => this.getCellClasses(x, y);
 
@@ -38,6 +41,14 @@ export class GameActiveComponent {
           }
         }
       }
+    }
+
+    // Update timer state when state changes - creates new object to force change detection
+    if (changes['state'] && this.state?.active) {
+      this.timerState = {
+        total: this.turnTimeLimitSeconds,
+        remaining: this.remainingTurnTimeSeconds
+      };
     }
 
     // Detect new turn and trigger explosion animation

@@ -280,7 +280,7 @@ export class GameComponent implements OnInit, OnDestroy {
       parts.push(`Eliminated: [${eliminated.join(', ')}]`);
     }
     
-    console.log(parts.join(' | '));
+    // console.log(parts.join(' | '));
   }
 
   onQuickStart() {

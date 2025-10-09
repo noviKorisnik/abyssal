@@ -16,6 +16,19 @@ export class GameReadyComponent {
   @Output() quickStart = new EventEmitter<void>();
   @Output() leave = new EventEmitter<void>();
 
+  // Timer state - updated only when state changes to force change detection
+  timerState: { total: number; remaining: number } = { total: 0, remaining: 0 };
+
+  ngOnChanges(changes: any) {
+    // Update timer state when state changes - creates new object to force change detection
+    if (changes['state'] && this.state?.ready) {
+      this.timerState = {
+        total: this.totalWaitTimeSeconds,
+        remaining: this.countdownSeconds
+      };
+    }
+  }
+
   get countdownSeconds(): number {
     if (!this.state?.ready?.countdownTimer) return 0;
     return Math.floor(this.state.ready.countdownTimer / 1000);

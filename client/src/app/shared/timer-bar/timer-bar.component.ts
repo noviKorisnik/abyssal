@@ -9,20 +9,21 @@ import { CommonModule } from '@angular/common';
   styleUrls: ['./timer-bar.component.scss']
 })
 export class TimerBarComponent implements OnChanges, OnDestroy {
-  @Input() totalTime!: number; // Total time in seconds
-  @Input() remainingTime!: number; // Remaining time in seconds (triggers countdown start)
+  @Input() timerState?: { total: number; remaining: number }; // Timer state object (forces change detection)
   @Input() color: string = '#3399ff'; // Color for the progress bar
   @Input() label: string = 'Time Left'; // Label for the timer
   @Input() isUserTurn: boolean = false; // Whether it's the current user's turn
 
   currentTime: number = 0;
+  private totalTimeCached: number = 0; // Cache total time for progress calculation
   private countdownInterval: any = null;
   private countdownStartTime: number = 0;
   private initialTime: number = 0;
 
   ngOnChanges(changes: SimpleChanges) {
-    if (changes['remainingTime'] && this.remainingTime !== undefined) {
-      const roundedTime = Math.floor(this.remainingTime);
+    if (changes['timerState'] && this.timerState) {
+      const roundedTime = Math.floor(this.timerState.remaining);
+      this.totalTimeCached = this.timerState.total;
       this.startCountdown(roundedTime);
     }
   }
@@ -59,10 +60,10 @@ export class TimerBarComponent implements OnChanges, OnDestroy {
   }
 
   get progressPercentage(): number {
-    if (this.totalTime <= 0) return 0;
+    if (this.totalTimeCached <= 0) return 0;
     // Progress from 0% to 100% as time elapses (left to right)
-    const elapsed = this.totalTime - this.currentTime;
-    return 100 - Math.max(0, Math.min(100, (elapsed / this.totalTime) * 100));
+    const elapsed = this.totalTimeCached - this.currentTime;
+    return 100 - Math.max(0, Math.min(100, (elapsed / this.totalTimeCached) * 100));
   }
 
   get timeDisplay(): string {
