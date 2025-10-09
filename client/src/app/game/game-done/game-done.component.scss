@@ -29,6 +29,9 @@ h2 {
   color: rgba(255, 255, 255, 0.95);
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
   margin-bottom: 0.75rem;
+  font-style: oblique;
+  text-indent: 1.5rem; // Compensate for letter-spacing on last character
+  font-weight: normal;
 }
 
 .result-banner {

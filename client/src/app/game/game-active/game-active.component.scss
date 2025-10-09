@@ -165,6 +165,9 @@ $board-saturation: 80%;
   margin-top: 0;
   text-align: center;
   letter-spacing: 1.5rem;
+  font-style: oblique;
+  text-indent: 1.5rem; // Compensate for letter-spacing on last character
+  font-weight: normal;
 }
 .active-game button {
   margin-top: 1rem;

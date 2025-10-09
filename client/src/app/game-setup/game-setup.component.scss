@@ -22,13 +22,16 @@ $board-saturation: 80%;
   }
 }
 
-h1 {
+h2 {
   margin-top: 0;
   text-align: center;
   letter-spacing: 1.5rem;
+  font-style: oblique;
+  text-indent: 1.5rem; // Compensate for letter-spacing on last character
   color: rgba(255, 255, 255, 0.95);
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
   font-size: 1.5rem;
+  font-weight: normal;
 }
 
 .player-name-section {
