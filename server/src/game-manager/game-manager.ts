@@ -679,12 +679,19 @@ export class GameManager {
     }
 
     /**
-     * Stub: Injects AI players to fill up to minPlayers before game starts.
-     * TODO: Implement actual AI player logic.
+     * Injects AI players to fill up to minPlayers before game starts.
+     * AI players will automatically make moves when it's their turn.
      */
     private injectAIPlayers(count: number) {
         for (let i = 0; i < count; i++) {
             const aiPlayer = AIManager.createAIPlayer(this.config);
+            
+            // Set up callback so AI can send messages back to game manager
+            aiPlayer.setGameManagerCallback((message: any) => {
+                // AI sends messages to game manager (e.g., pickCell)
+                this.dispatch(message);
+            });
+            
             this.players.push(aiPlayer);
             this.sockets.add(aiPlayer);
             aiPlayer.send(JSON.stringify({ type: 'joined', gameId: this.id, aiPlayer }));
