@@ -164,7 +164,7 @@ $player-colors: (
 // Player color assignments (cycling through 4 colors)
 @for $i from 0 through 3 {
   .player-#{$i} {
-    background: map-get($player-colors, $i);
+    background: map.get($player-colors, $i);
   }
 }
 

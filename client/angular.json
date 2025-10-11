@@ -35,6 +35,7 @@
           },
           "configurations": {
             "production": {
+              "baseHref": "/abyssal/",
               "budgets": [
                 {
                   "type": "initial",
