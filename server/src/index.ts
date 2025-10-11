@@ -4,6 +4,10 @@ import { WebSocketServer } from 'ws';
 import { gameConfigRouter } from './game-config';
 import { gameManagerRouter, handleGameManagerSocket } from './game-manager';
 import { NameGenerator } from './name-generator';
+import { GameLogger } from './game-manager/game-logger';
+
+// Initialize game logger (creates logs directory if needed)
+GameLogger.initialize();
 
 const app = express();
 const server = createServer(app);

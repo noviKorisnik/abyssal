@@ -1,6 +1,7 @@
 import { GameConfig } from "../game-config";
 import { GamePlayer, GameState, GameStatusMessage, GameTurn } from "../game-model";
 import { AIManager } from '../ai-manager';
+import { GameLogger } from './game-logger';
 
 export class GameManager {
     // Track eliminated players
@@ -174,7 +175,7 @@ export class GameManager {
 
         if (this.isGameDone()) {
             this.state = 'done';
-            this.broadcast();
+            this.broadcast(); // Logging happens inside broadcast when state is 'done'
         } else {
             this.nextTurn();
         }
@@ -355,6 +356,12 @@ export class GameManager {
                 history: this.historyState,
                 boardLayout: this.boardLayoutState,
             };
+            
+            // Log completed games to daily file
+            if (this.state === 'done') {
+                GameLogger.logGameBroadcast(message);
+            }
+            
             const msg = JSON.stringify(message);
             for (const sock of this.sockets) {
                 try { sock.send(msg); } catch (err) { /* handle error */ }
@@ -740,7 +747,6 @@ export class GameManager {
         // Optionally reset other state (countdown, etc.)
         this.sockets.clear();
     }
-
 
 
 }
