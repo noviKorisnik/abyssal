@@ -1,6 +1,7 @@
 import express from 'express';
 import { createServer } from 'http';
 import { WebSocketServer } from 'ws';
+import cors from 'cors';
 import { gameConfigRouter } from './game-config';
 import { gameManagerRouter, handleGameManagerSocket } from './game-manager';
 import { NameGenerator } from './name-generator';
@@ -12,6 +13,17 @@ GameLogger.initialize();
 const app = express();
 const server = createServer(app);
 const wss = new WebSocketServer({ server });
+
+if (process.env.NODE_ENV === 'production') {
+  const allowedOrigins = process.env.CLIENT_BASE_URL ?? 'http://localhost:4200';
+  
+  app.use(cors({
+    origin: allowedOrigins,
+    credentials: true
+  }));
+}
+
+// Configure CORS
 
 app.use(express.json());
 
@@ -31,7 +43,7 @@ wss.on('connection', (ws) => {
   handleGameManagerSocket(ws);
 });
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 8080;
 server.listen(PORT, () => {
   console.log(`Abyssal server listening on port ${PORT}`);
 });

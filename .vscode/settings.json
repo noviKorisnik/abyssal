@@ -1,0 +1,8 @@
+{
+    "appService.zipIgnorePattern": [
+        "node_modules{,/**}",
+        ".vscode{,/**}"
+    ],
+    "appService.defaultWebAppToDeploy": "/subscriptions/3ab14bdd-4183-4954-b7fb-3fcbcfea9e64/resourceGroups/Abyssal/providers/Microsoft.Web/sites/abyssal",
+    "appService.deploySubpath": "deploy"
+}
