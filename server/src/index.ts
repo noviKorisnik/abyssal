@@ -15,8 +15,10 @@ const server = createServer(app);
 const wss = new WebSocketServer({ server });
 
 if (process.env.NODE_ENV === 'production') {
-  const allowedOrigins = process.env.CLIENT_BASE_URL?.split(',') ?? 'http://localhost:4200';
-
+  const allowedOrigins = process.env.CLIENT_BASE_URL
+    ? process.env.CLIENT_BASE_URL.split(',').map(url => url.trim())
+    : ['http://localhost:4200'];
+    
   app.use(cors({
     origin: allowedOrigins,
     credentials: true
