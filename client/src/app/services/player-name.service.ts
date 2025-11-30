@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { StorageService } from './storage.service';
+import { environment } from '../../environments/environment';
 
 const PLAYER_NAME_KEY = 'abyssal_player_name';
 
@@ -10,12 +11,12 @@ const PLAYER_NAME_KEY = 'abyssal_player_name';
   providedIn: 'root'
 })
 export class PlayerNameService {
-  private apiUrl = '/api/names'; // Use relative URL for proxy
+  private apiUrl = `${environment.apiBaseUrl}/names`;
 
   constructor(
     private http: HttpClient,
     private storage: StorageService
-  ) {}
+  ) { }
 
   /**
    * Get player name from storage
